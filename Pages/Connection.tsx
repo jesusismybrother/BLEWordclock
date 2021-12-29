@@ -1,4 +1,14 @@
-import {Text, View, Button, TouchableOpacity} from 'react-native';
+import {
+  Text,
+  View,
+  Keyboard,
+  KeyboardAvoidingView,
+  Button,
+  Platform,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  TextInput,
+} from 'react-native';
 
 import React, {useState, useContext} from 'react';
 
@@ -8,32 +18,25 @@ import RNPickerSelect from 'react-native-picker-select';
 
 import {styles} from '../Styles/styles';
 
-import {ConnectionContext, BLTparameters} from '../AppContext/Appcontext';
+import {WordclockData, BLTparameters} from '../AppContext/Appcontext';
 
 import {ConnectionIndicator} from '../Components/connectionIndicator';
 
 export function Connection() {
   const BLToptions = useContext(BLTparameters);
-  const connectionContext = useContext(ConnectionContext);
+  const WordclockDataContext = useContext(WordclockData);
 
   const [selectedBT, setSelectedBT] = useState('none');
-  const [WifiList, setWifiList] = useState([
-    {label: 'Wifi1', value: 'Wifi1'},
-    {label: 'Wifi2', value: 'Wifi2'},
-    {label: 'Wifi3', value: 'Wifi3'},
-    {label: 'Wifi4', value: 'Wifi4'},
-  ]);
+
+  const [text, onChangeText] = React.useState('Useless Text');
 
   return (
     <View>
       <ConnectionIndicator />
-
       <Divider width={2} />
-
       <View style={styles.rowView}>
         <Text style={styles.titleText}>Bluetooth</Text>
       </View>
-
       <View style={styles.rowView}>
         <Button title="Search" onPress={() => BLToptions.scanDevices()} />
 
@@ -42,10 +45,7 @@ export function Connection() {
             <Button
               title="Disconnect"
               onPress={() => {
-                const item = BLToptions.foundDevices.find(
-                  dev => dev.value === selectedBT,
-                );
-                BLToptions.disconnectDevice(item.device);
+                BLToptions.disconnectDevice();
               }}
             />
           ) : (
@@ -59,50 +59,46 @@ export function Connection() {
                   BLToptions.connectDevice(item.device);
                 }
               }}
-              disabled={connectionContext.isConnectedWIFI == true}
+              disabled={false}
             />
           )}
         </TouchableOpacity>
       </View>
-
       <RNPickerSelect
         onValueChange={value => {
           setSelectedBT(value);
         }}
         items={BLToptions.foundDevices}
       />
-
       <Divider width={2} />
       <View style={styles.rowView}>
         <Text style={styles.titleText}>Wifi</Text>
       </View>
 
       <View style={styles.rowView}>
-        <Button title="Search" onPress={() => console.log('Search Wifi')} />
-        <TouchableOpacity style={{width: 120}}>
-          {connectionContext.isConnectedWIFI ? (
-            <Button
-              title="Disconnect"
-              onPress={() => {
-                connectionContext.setWifiFalse();
-              }}
-            />
-          ) : (
-            <Button
-              title="Connect"
-              onPress={() => {
-                connectionContext.setWifiTrue();
-              }}
-              disabled={connectionContext.isConnectedBT == true}
-            />
-          )}
+        <Text>SSID:</Text>
+        <TextInput onChangeText={onChangeText} placeholder="Wifi" />
+      </View>
+      <View style={styles.rowView}>
+        <Text>Password:</Text>
+
+        <TextInput
+          onChangeText={onChangeText}
+          secureTextEntry={true}
+          placeholder="Password"
+        />
+      </View>
+      <View style={styles.rowView}>
+        <TouchableOpacity style={{width: 220}}>
+          <Button
+            title="Set Wifi Connection"
+            onPress={() => {
+              // connectionContext.setWifiFalse();
+            }}
+          />
         </TouchableOpacity>
       </View>
-      <RNPickerSelect
-        onValueChange={value => console.log(value)}
-        items={WifiList}
-      />
-      <Divider width={2} />
+      {/* <Divider width={2} /> */}
     </View>
   );
 }

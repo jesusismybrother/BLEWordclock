@@ -1,12 +1,9 @@
-import React from "react";
-
+import React from 'react';
 
 //contains information about BL and Wifi connection
-const ConnectionContext = React.createContext();
-
+const WordclockData = React.createContext();
 
 //Used to interact with the BLT manager
-const BLTparameters =React.createContext();
+const BLTparameters = React.createContext();
 
-export {BLTparameters, ConnectionContext};
-
+export {BLTparameters, WordclockData};

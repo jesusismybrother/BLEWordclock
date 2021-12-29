@@ -14,45 +14,38 @@ import {styles} from '../Styles/styles';
 
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-import {ConnectionContext} from '../AppContext/Appcontext';
+import {WordclockData} from '../AppContext/Appcontext';
 
 import {ConnectionIndicator} from '../Components/connectionIndicator';
 
 export function Settings() {
-  const connectionContext = useContext(ConnectionContext);
+  const WordclockDataContext = useContext(WordclockData);
 
-  const [sliderState, setSliderState] = useState(0.0);
-
-  const [summertimeState, setSummertimeState] = useState(false);
-
-  const [nightmodeState, setNightmodeState] = useState(false);
+  const [sliderState, setSliderState] = useState(0);
 
   const [dateFrom, setDateFrom] = useState(new Date(1598051730000));
+  const [dateTo, setDateTo] = useState(new Date(1598051730000));
+
   const [showFrom, setShowFrom] = useState(false);
 
-  const onChangeFrom = (event, selectedDate) => {
+  const onChangeFrom = (event: any, selectedDate: Date) => {
     const currentDateFrom = selectedDate || dateFrom;
     setShowFrom(Platform.OS === 'ios');
-    setDateFrom(currentDateFrom);
-    console.log(dateFrom.getHours(), ':', dateFrom.getMinutes());
+    WordclockDataContext.setDateFrom(currentDateFrom);
+    const stringfrom =
+      selectedDate.getHours() + ':' + selectedDate.getMinutes();
+    WordclockDataContext.setNightmodeFrom(stringfrom);
   };
 
-  const showModeFrom = () => {
-    setShowFrom(true);
-  };
-
-  const [dateTo, setDateTo] = useState(new Date(1598051730000));
   const [showTo, setShowTo] = useState(false);
 
-  const onChangeTo = (event, selectedDate) => {
+  const onChangeTo = (event: any, selectedDate: Date) => {
     const currentDateTo = selectedDate || dateTo;
     setShowTo(Platform.OS === 'ios');
-    setDateTo(currentDateTo);
-    console.log(dateTo.getHours(), ':', dateTo.getMinutes());
-  };
-
-  const showModeTo = () => {
-    setShowTo(true);
+    WordclockDataContext.setDateTo(currentDateTo);
+    const stringfrom =
+      selectedDate.getHours() + ':' + selectedDate.getMinutes();
+    WordclockDataContext.setNightmodeTo(stringfrom);
   };
 
   const [GMTList, setGMTList] = useState([
@@ -97,20 +90,18 @@ export function Settings() {
         <Text style={styles.baseText}>Timezone</Text>
       </View>
       <RNPickerSelect
-        onValueChange={value => console.log(value)}
-        value={'1'}
-        placeholder={{
-          label: 'GMT+1',
-          value: '1',
-        }}
+        onValueChange={value => WordclockDataContext.setTimezone(value)}
+        value={WordclockDataContext.timezone}
         items={GMTList}
       />
       <View style={styles.rowView}>
         <Text style={styles.baseText}>Automatic Summertime?</Text>
         <CheckBox
           disabled={false}
-          value={summertimeState}
-          onValueChange={newValue => setSummertimeState(newValue)}
+          value={WordclockDataContext.summertime}
+          onValueChange={newValue =>
+            WordclockDataContext.setSummertime(newValue)
+          }
         />
       </View>
 
@@ -125,12 +116,8 @@ export function Settings() {
 
         <TouchableOpacity style={{width: 100}}>
           <Button
-            onPress={showModeFrom}
-            title={
-              dateFrom.getHours().toString() +
-              ':' +
-              dateFrom.getMinutes().toString()
-            }
+            onPress={() => setShowFrom(true)}
+            title={WordclockDataContext.nightmodeFrom}
           />
         </TouchableOpacity>
       </View>
@@ -140,12 +127,8 @@ export function Settings() {
 
         <TouchableOpacity style={{width: 100}}>
           <Button
-            onPress={showModeTo}
-            title={
-              dateTo.getHours().toString() +
-              ':' +
-              dateTo.getMinutes().toString()
-            }
+            onPress={() => setShowTo(true)}
+            title={WordclockDataContext.nightmodeTo}
           />
         </TouchableOpacity>
       </View>
@@ -153,7 +136,7 @@ export function Settings() {
       {showFrom && (
         <DateTimePicker
           testID="dateTimePicker"
-          value={dateFrom}
+          value={WordclockDataContext.dateFrom}
           mode="time"
           is24Hour={true}
           display="default"
@@ -164,7 +147,7 @@ export function Settings() {
       {showTo && (
         <DateTimePicker
           testID="dateTimePicker"
-          value={dateTo}
+          value={WordclockDataContext.dateTo}
           mode="time"
           is24Hour={true}
           display="default"
@@ -176,8 +159,10 @@ export function Settings() {
         <Text style={styles.baseText && {width: 150}}>Activate?</Text>
         <CheckBox
           disabled={false}
-          value={nightmodeState}
-          onValueChange={newValue => setNightmodeState(newValue)}
+          value={WordclockDataContext.nightmode}
+          onValueChange={newValue => {
+            WordclockDataContext.setNightmode(newValue);
+          }}
         />
       </View>
 
@@ -189,8 +174,11 @@ export function Settings() {
         value={sliderState}
         maximumValue={100}
         minimumValue={0}
-        step={1}
+        step={5}
         onValueChange={value => setSliderState(value[0])}
+        onSlidingComplete={value =>
+          WordclockDataContext.setNightmodebright(value[0])
+        }
       />
     </View>
   );
