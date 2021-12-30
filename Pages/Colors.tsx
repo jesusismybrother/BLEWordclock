@@ -1,16 +1,22 @@
 import {Text, View, Button, Dimensions, StyleSheet} from 'react-native';
-import React, {useState, useContext, Component} from 'react';
+import React, {useState, useContext, useEffect, Component} from 'react';
 import {styles} from '../Styles/styles';
 import {Slider} from '@miblanchard/react-native-slider';
 import {WordclockData} from '../AppContext/Appcontext';
 
 import {ConnectionIndicator} from '../Components/connectionIndicator';
 
-import {TriangleColorPicker, fromHsv} from 'react-native-color-picker';
+import {TriangleColorPicker, fromHsv, toHsv} from 'react-native-color-picker';
 
 export function Colors() {
   const [sliderState, setSliderState] = useState(50);
+  const [color, setColor] = useState('#ffffff');
   const WordclockDataContext = useContext(WordclockData);
+
+  useEffect(() => {
+    setSliderState(WordclockDataContext.brightness);
+    setColor(WordclockDataContext.color);
+  }, []);
 
   return (
     <View>
@@ -43,6 +49,10 @@ export function Colors() {
           width: 350,
           height: 300,
         }}
+        onColorChange={value => {
+          setColor(fromHsv(value));
+        }}
+        color={toHsv(color)}
       />
       <View style={styles.rowView}>
         <Text style={styles.baseText}>Select Color</Text>

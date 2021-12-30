@@ -104,10 +104,15 @@ BLECharacteristic *nightmodeto_characteristic = NULL;
 BLECharacteristic *color_characteristic = NULL;
 BLECharacteristic *brightness_characteristic = NULL;
 
+BLECharacteristic *message_characteristic = NULL;
+
+BLECharacteristic *wificonnected_characteristic = NULL;
+BLECharacteristic *ssid_characteristic = NULL;
+BLECharacteristic *password_characteristic = NULL;
+
 // See the following for generating UUIDs:
 // https://www.uuidgenerator.net/
 
-#define SERVICE_UUID "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
 #define NIGHT_SERVICE_UUID "0d8518ba-ed68-4583-a85e-6352b7bba0bc"
 
 #define NIGHTMODE_CHARACTERISTIC_UUID "beb5483e-36e1-4688-b7f5-ea07361b26a8"
@@ -115,8 +120,19 @@ BLECharacteristic *brightness_characteristic = NULL;
 #define NIGHTMODEFROM_CHARACTERISTIC_UUID "135765a3-58f9-401c-86e4-aa290444a7df"
 #define NIGHTMODETO_CHARACTERISTIC_UUID "8ee0395f-8cf1-4599-88b7-265b5eec79d0"
 
+#define GENERAL_SERVICE_UUID "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
+
 #define SUMMERTIME_CHARACTERISTIC_UUID "6d68efe5-04b6-4a85-abc4-c2670b7bf7fd"
 #define TIMEZONE_CHARACTERISTIC_UUID "f27b53ad-c63d-49a0-8c0f-9f297e6cc520"
 
 #define COLOR_CHARACTERISTIC_UUID "63311740-35c8-4f20-9453-51c12f4bba04"
 #define BRIGHTNETT_CHARACTERISTIC_UUID "5b1d822c-20ac-4286-a1ac-dd991d6b3e8f"
+
+#define MESSAGE_CHARACTERISTIC_UUID "7cb38031-e0ae-4fa3-b365-df54564b33bc"
+
+#define WIFI_SERVICE_UUID "f7c75cd0-2082-4fd1-8d7d-94523bc32688"
+
+#define MESSAGE_CHARACTERISTIC_UUID "7cb38031-e0ae-4fa3-b365-df54564b33bc"
+#define WIFICONNECTED_CHARACTERISTIC_UUID "9822a39c-066f-4c24-888b-7b825be94ec2"
+#define SSID_CHARACTERISTIC_UUID "b16da357-b7bf-4825-b2cd-25790570af6f"
+#define PASSWORD_CHARACTERISTIC_UUID "f16b1d63-b8d7-4531-94a7-551102fe5a8a"

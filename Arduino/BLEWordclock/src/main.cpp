@@ -4,6 +4,42 @@
 void refreshInterface();
 void setColor();
 
+// Connect to router network and return 1 (success) or -1 (no success)
+int WiFi_RouterNetworkConnect(String txtSSID, String txtPassword)
+{
+  char *SSID = const_cast<char *>(txtSSID.c_str());
+  char *Password = const_cast<char *>(txtPassword.c_str());
+  int success = 1;
+
+  WiFi.begin(SSID, Password);
+  WiFi.setHostname(HOSTNAME);
+
+  // we wait until connection is established
+  // or 10 seconds are gone
+
+  int WiFiConnectTimeOut = 0;
+  while ((WiFi.status() != WL_CONNECTED) && (WiFiConnectTimeOut < 10))
+  {
+    delay(1000);
+    WiFiConnectTimeOut++;
+  }
+
+  // not connected
+  if (WiFi.status() != WL_CONNECTED)
+  {
+    success = -1;
+    wificonnected = false;
+  }
+  else
+  {
+    wificonnected = true;
+  }
+
+  Serial.println(WiFi.localIP());
+
+  return success;
+}
+
 class MyServerCallbacks : public BLEServerCallbacks
 {
   void onConnect(BLEServer *pServer)
@@ -79,6 +115,27 @@ class CharacteristicsCallbacks : public BLECharacteristicCallbacks
       BrightnessPercent = pCharacteristic->getValue().c_str();
       preferences.putString("Perc", BrightnessPercent);
       refreshInterface();
+    }
+
+    if (pCharacteristic == ssid_characteristic)
+    {
+      WIFISSID = pCharacteristic->getValue().c_str();
+      preferences.putString("SSID", WIFISSID);
+    }
+
+    if (pCharacteristic == password_characteristic)
+    {
+      WIFIPassword = pCharacteristic->getValue().c_str();
+      preferences.putString("Password", WIFIPassword);
+      message_characteristic->setValue("Connecting to new Network");
+      message_characteristic->notify();
+
+      if (WiFi.status() == WL_CONNECTED)
+      {
+        WiFi.disconnect();
+      }
+
+      WiFi_RouterNetworkConnect(WIFISSID, WIFIPassword);
     }
   }
 };
@@ -667,7 +724,7 @@ void updateTime()
 
 void Wifireconnect()
 {
-  if (reconnecttimer - millis() > 60000)
+  if (reconnecttimer - millis() > 5000)
   {
     //   Serial.println("Attempting to reconnect");
     String strSSID = preferences.getString("SSID", "");
@@ -682,42 +739,6 @@ void Wifireconnect()
   }
 }
 
-// Connect to router network and return 1 (success) or -1 (no success)
-int WiFi_RouterNetworkConnect(String txtSSID, String txtPassword)
-{
-  char *SSID = const_cast<char *>(txtSSID.c_str());
-  char *Password = const_cast<char *>(txtPassword.c_str());
-  int success = 1;
-
-  WiFi.begin(SSID, Password);
-  WiFi.setHostname(HOSTNAME);
-
-  // we wait until connection is established
-  // or 10 seconds are gone
-
-  int WiFiConnectTimeOut = 0;
-  while ((WiFi.status() != WL_CONNECTED) && (WiFiConnectTimeOut < 10))
-  {
-    delay(1000);
-    WiFiConnectTimeOut++;
-  }
-
-  // not connected
-  if (WiFi.status() != WL_CONNECTED)
-  {
-    success = -1;
-    wificonnected = false;
-  }
-  else
-  {
-    wificonnected = true;
-  }
-
-  Serial.println(WiFi.localIP());
-
-  return success;
-}
-
 void setup()
 {
   Serial.begin(115200);
@@ -728,20 +749,19 @@ void setup()
   // Retrieve Configuration from FLASH
   initvalues();
 
-  // connect to WIFI
-
-  WiFi_RouterNetworkConnect(WIFISSID, WIFIPassword);
-
   // Create the BLE Device
-  BLEDevice::init("MyESP32");
+  BLEDevice::init("WordclockBLE");
   // Create the BLE Server
   pServer = BLEDevice::createServer();
   pServer->setCallbacks(new MyServerCallbacks());
   // Create the BLE Service
-  BLEService *pService = pServer->createService(SERVICE_UUID);
+  BLEService *pService = pServer->createService(GENERAL_SERVICE_UUID);
   delay(100);
   BLEService *pNightService = pServer->createService(NIGHT_SERVICE_UUID);
   delay(100);
+  BLEService *pWifiService = pServer->createService(WIFI_SERVICE_UUID);
+  delay(100);
+
   // Create a BLE Characteristic
   nightmode_characteristic = pNightService->createCharacteristic(
       NIGHTMODE_CHARACTERISTIC_UUID,
@@ -799,11 +819,40 @@ void setup()
           BLECharacteristic::PROPERTY_NOTIFY |
           BLECharacteristic::PROPERTY_INDICATE);
 
+  wificonnected_characteristic = pWifiService->createCharacteristic(
+      WIFICONNECTED_CHARACTERISTIC_UUID,
+      BLECharacteristic::PROPERTY_READ |
+          BLECharacteristic::PROPERTY_NOTIFY |
+          BLECharacteristic::PROPERTY_INDICATE);
+
+  ssid_characteristic = pWifiService->createCharacteristic(
+      SSID_CHARACTERISTIC_UUID,
+      BLECharacteristic::PROPERTY_READ |
+          BLECharacteristic::PROPERTY_WRITE |
+          BLECharacteristic::PROPERTY_NOTIFY |
+          BLECharacteristic::PROPERTY_INDICATE);
+
+  password_characteristic = pWifiService->createCharacteristic(
+      PASSWORD_CHARACTERISTIC_UUID,
+      BLECharacteristic::PROPERTY_WRITE |
+          BLECharacteristic::PROPERTY_NOTIFY |
+          BLECharacteristic::PROPERTY_INDICATE);
+
+  message_characteristic = pWifiService->createCharacteristic(
+      MESSAGE_CHARACTERISTIC_UUID,
+      BLECharacteristic::PROPERTY_READ |
+          BLECharacteristic::PROPERTY_NOTIFY |
+          BLECharacteristic::PROPERTY_INDICATE);
+
   // Start the BLE service
   pService->start();
   pNightService->start();
+  pWifiService->start();
+
   // Start advertising
   pServer->getAdvertising()->start();
+
+  message_characteristic->setValue("");
 
   nightmode_characteristic->setValue(const_cast<char *>(NightmodeActive.c_str()));
   nightmode_characteristic->setCallbacks(new CharacteristicsCallbacks());
@@ -829,7 +878,20 @@ void setup()
   color_characteristic->setValue(const_cast<char *>(ColorInHex.c_str()));
   color_characteristic->setCallbacks(new CharacteristicsCallbacks());
 
+  wificonnected_characteristic->setValue("0");
+  wificonnected_characteristic->setCallbacks(new CharacteristicsCallbacks());
+
+  ssid_characteristic->setValue(const_cast<char *>(WIFISSID.c_str()));
+  ssid_characteristic->setCallbacks(new CharacteristicsCallbacks());
+
+  password_characteristic->setValue(const_cast<char *>(WIFIPassword.c_str()));
+  password_characteristic->setCallbacks(new CharacteristicsCallbacks());
+
   Serial.println("Waiting for a client connection to notify...");
+
+  // connect to WIFI
+
+  WiFi_RouterNetworkConnect(WIFISSID, WIFIPassword);
 
   refreshInterface();
 }
@@ -838,10 +900,22 @@ void refreshInterface()
 {
   if (WiFi.status() != WL_CONNECTED)
   {
+    if (wificonnected == true)
+    {
+      wificonnected_characteristic->setValue("0");
+      wificonnected_characteristic->notify();
+    }
+    wificonnected = false;
     Wifireconnect();
   }
   else
   {
+    if (wificonnected == false)
+    {
+      wificonnected_characteristic->setValue("1");
+      wificonnected_characteristic->notify();
+      wificonnected = true;
+    }
     updateTime();
   }
   setColor();

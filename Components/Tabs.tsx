@@ -4,7 +4,7 @@ import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import {Settings} from '../Pages/Settings';
 import {Connection} from '../Pages/Connection';
 import {Colors} from '../Pages/Colors';
-
+import {BLTparameters} from '../AppContext/Appcontext';
 const Tab = createBottomTabNavigator();
 
 export default function MyTabs() {

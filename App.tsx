@@ -1,5 +1,5 @@
 import React, {useReducer, useState, useEffect, useCallback} from 'react';
-import {PermissionsAndroid} from 'react-native';
+import {TouchableOpacity, Button, PermissionsAndroid} from 'react-native';
 
 import {NavigationContainer} from '@react-navigation/native';
 import base64 from 'react-native-base64';
@@ -8,6 +8,7 @@ import {WordclockData, BLTparameters} from './AppContext/Appcontext';
 import {BleManager, Device} from 'react-native-ble-plx';
 
 import MyTabs from './Components/Tabs';
+import WelcomePage from './Pages/WelcomePage';
 import Spinner from 'react-native-loading-spinner-overlay';
 
 import {LogBox} from 'react-native';
@@ -53,6 +54,13 @@ const reducer = (
 
 const SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
 const NIGHT_SERVICE_UUID = '0d8518ba-ed68-4583-a85e-6352b7bba0bc';
+const WIFI_SERVICE_UUID = 'f7c75cd0-2082-4fd1-8d7d-94523bc32688';
+
+const MESSAGE_CHARACTERISTIC_UUID = '7cb38031-e0ae-4fa3-b365-df54564b33bc';
+const WIFICONNECTED_CHARACTERISTIC_UUID =
+  '9822a39c-066f-4c24-888b-7b825be94ec2';
+const SSID_CHARACTERISTIC_UUID = 'b16da357-b7bf-4825-b2cd-25790570af6f';
+const PASSWORD_CHARACTERISTIC_UUID = 'f16b1d63-b8d7-4531-94a7-551102fe5a8a';
 
 const NIGHTMODE_CHARACTERISTIC_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
 const SUMMERTIME_CHARACTERISTIC_UUID = '6d68efe5-04b6-4a85-abc4-c2670b7bf7fd';
@@ -105,10 +113,12 @@ export default function App() {
   const [nightmode, setNightmode] = useState(true);
   const [nightmodebright, setNightmodebright] = useState(20);
 
+  const [wifiConnected, setWifiConnected] = useState(false);
+  const [ssid, setSsid] = useState('');
+  const [message, setMessage] = useState('');
+
   const [nightmodeFrom, setNightmodeFrom] = useState('22:00');
   const [nightmodeTo, setNightmodeTo] = useState('05:00');
-
-  const [arduinoTest, setArduinoTest] = useState('0');
 
   const [color, setColor] = useState('#ff0000');
   const [brightness, setBrightness] = useState(50);
@@ -128,16 +138,21 @@ export default function App() {
       }
 
       // if a device is detected add the device to the list by dispatching the action into the reducer
-      if (scannedDevice && scannedDevice.name != null) {
-        console.log(scannedDevice.name);
-        dispatch({
-          type: 'ADD_DEVICE',
-          payload: {
-            device: scannedDevice,
-            label: scannedDevice.name,
-            value: scannedDevice.id,
-          },
-        });
+      // if (scannedDevice && scannedDevice.name != null) {
+      //   console.log(scannedDevice.name);
+      //   dispatch({
+      //     type: 'ADD_DEVICE',
+      //     payload: {
+      //       device: scannedDevice,
+      //       label: scannedDevice.name,
+      //       value: scannedDevice.id,
+      //     },
+      //   });
+      // }
+
+      if (scannedDevice && scannedDevice.name == 'WordclockBLE') {
+        BLTManager.stopDeviceScan();
+        connectDevice(scannedDevice);
       }
     });
 
@@ -154,7 +169,6 @@ export default function App() {
     connectDevice,
     disconnectDevice,
     foundDevices: scannedDevices,
-    arduinoValue: arduinoTest,
     isLoading: isLoading,
     isConnected: isConnected,
   };
@@ -177,6 +191,9 @@ export default function App() {
         BLTManager.cancelTransaction('timezonetransaction');
         BLTManager.cancelTransaction('brightnesstransaction');
         BLTManager.cancelTransaction('colortransaction');
+        BLTManager.cancelTransaction('wifisconnectedtransaction');
+        BLTManager.cancelTransaction('messagetransaction');
+        BLTManager.cancelTransaction('ssidtransaction');
 
         BLTManager.cancelDeviceConnection(connectedDevice.id).then(() =>
           console.log('DC completed'),
@@ -304,6 +321,36 @@ export default function App() {
           .readCharacteristicForService(SERVICE_UUID, COLOR_CHARACTERISTIC_UUID)
           .then(valenc => {
             setColor(base64.decode(valenc?.value));
+          });
+
+        //WifiConnected
+        device
+          .readCharacteristicForService(
+            WIFI_SERVICE_UUID,
+            WIFICONNECTED_CHARACTERISTIC_UUID,
+          )
+          .then(valenc => {
+            setMessage(StringToBool(base64.decode(valenc?.value)));
+          });
+
+        //SSID
+        device
+          .readCharacteristicForService(
+            WIFI_SERVICE_UUID,
+            SSID_CHARACTERISTIC_UUID,
+          )
+          .then(valenc => {
+            setSsid(base64.decode(valenc?.value));
+          });
+
+        //Messagve
+        device
+          .readCharacteristicForService(
+            WIFI_SERVICE_UUID,
+            MESSAGE_CHARACTERISTIC_UUID,
+          )
+          .then(valenc => {
+            setMessage(base64.decode(valenc?.value));
           });
 
         //monitor values
@@ -461,6 +508,56 @@ export default function App() {
           },
           'brightnesstransaction',
         );
+
+        //WifiIsConnected
+        device.monitorCharacteristicForService(
+          WIFI_SERVICE_UUID,
+          WIFICONNECTED_CHARACTERISTIC_UUID,
+          (error, characteristic) => {
+            if (characteristic?.value != null) {
+              setWifiConnected(
+                StringToBool(base64.decode(characteristic?.value)),
+              );
+              console.log(
+                'WifiisConnected update received: ',
+                base64.decode(characteristic?.value),
+              );
+            }
+          },
+          'wifiisconnectedtransaction',
+        );
+
+        //SSid
+        device.monitorCharacteristicForService(
+          WIFI_SERVICE_UUID,
+          SSID_CHARACTERISTIC_UUID,
+          (error, characteristic) => {
+            if (characteristic?.value != null) {
+              setSsid(base64.decode(characteristic?.value));
+              console.log(
+                'SSID received: ',
+                base64.decode(characteristic?.value),
+              );
+            }
+          },
+          'ssidtransaction',
+        );
+
+        //Message
+        device.monitorCharacteristicForService(
+          WIFI_SERVICE_UUID,
+          MESSAGE_CHARACTERISTIC_UUID,
+          (error, characteristic) => {
+            if (characteristic?.value != null) {
+              setMessage(base64.decode(characteristic?.value));
+              console.log(
+                'Message received: ',
+                base64.decode(characteristic?.value),
+              );
+            }
+          },
+          'messagetransaction',
+        );
       });
 
     setIsLoading(false);
@@ -484,6 +581,35 @@ export default function App() {
 
     dateFrom: dateFrom,
     dateTo: dateTo,
+
+    ssid: ssid,
+    message: message,
+    isConnected: wifiConnected,
+
+    setPassword: (value: string) => {
+      BLTManager.writeCharacteristicWithResponseForDevice(
+        connectedDevice?.id,
+        WIFI_SERVICE_UUID,
+        PASSWORD_CHARACTERISTIC_UUID,
+        base64.encode(value),
+      ).then(characteristic => {
+        console.log(
+          'Password changed to :',
+          base64.decode(characteristic.value),
+        );
+      });
+    },
+
+    setSsid: (value: string) => {
+      BLTManager.writeCharacteristicWithResponseForDevice(
+        connectedDevice?.id,
+        WIFI_SERVICE_UUID,
+        SSID_CHARACTERISTIC_UUID,
+        base64.encode(value),
+      ).then(characteristic => {
+        console.log('SSID changed to :', base64.decode(characteristic.value));
+      });
+    },
 
     setDateFrom: (value: Date) => {
       setDateFrom(value);
@@ -609,10 +735,14 @@ export default function App() {
   return (
     <BLTparameters.Provider value={BLTfunctions}>
       <WordclockData.Provider value={WordclockDataOut}>
-        <NavigationContainer>
-          <Spinner visible={isLoading} textContent={'Searching...'} />
-          <MyTabs />
-        </NavigationContainer>
+        {!isConnected ? (
+          <WelcomePage />
+        ) : (
+          <NavigationContainer>
+            <Spinner visible={isLoading} textContent={'Searching...'} />
+            <MyTabs />
+          </NavigationContainer>
+        )}
       </WordclockData.Provider>
     </BLTparameters.Provider>
   );
