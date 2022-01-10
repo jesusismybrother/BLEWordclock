@@ -1,5 +1,5 @@
 import React, {useReducer, useState, useEffect, useCallback} from 'react';
-import {TouchableOpacity, Button, PermissionsAndroid} from 'react-native';
+import {TouchableOpacity, Button, PermissionsAndroid, View} from 'react-native';
 
 import {NavigationContainer} from '@react-navigation/native';
 import base64 from 'react-native-base64';
@@ -10,6 +10,8 @@ import {BleManager, Device} from 'react-native-ble-plx';
 import MyTabs from './Components/Tabs';
 import WelcomePage from './Pages/WelcomePage';
 import Spinner from 'react-native-loading-spinner-overlay';
+
+import Toast from 'react-native-simple-toast';
 
 import {LogBox} from 'react-native';
 LogBox.ignoreLogs(['new NativeEventEmitter']); // Ignore log notification by message
@@ -65,6 +67,8 @@ const PASSWORD_CHARACTERISTIC_UUID = 'f16b1d63-b8d7-4531-94a7-551102fe5a8a';
 const NIGHTMODE_CHARACTERISTIC_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
 const SUMMERTIME_CHARACTERISTIC_UUID = '6d68efe5-04b6-4a85-abc4-c2670b7bf7fd';
 const TIMEZONE_CHARACTERISTIC_UUID = 'f27b53ad-c63d-49a0-8c0f-9f297e6cc520';
+const HEARTBEAT_CHARACTERISTIC_UUID = '90853600-1dbb-4e78-9510-ec7a5762bed5';
+
 const NIGHTMODEFROM_CHARACTERISTIC_UUID =
   '135765a3-58f9-401c-86e4-aa290444a7df';
 const NIGHTMODETO_CHARACTERISTIC_UUID = '8ee0395f-8cf1-4599-88b7-265b5eec79d0';
@@ -74,7 +78,7 @@ const NIGHTMODEBRIGHT_CHARACTERISTIC_UUID =
 const COLOR_CHARACTERISTIC_UUID = '63311740-35c8-4f20-9453-51c12f4bba04';
 const BRIGHTNETT_CHARACTERISTIC_UUID = '5b1d822c-20ac-4286-a1ac-dd991d6b3e8f';
 
-const DC_CHECK_INTERVAL = 2000;
+const HEARTBEAT_INTERVAL = 1000;
 
 function StringToBool(input: String) {
   if (input == '1') {
@@ -126,42 +130,7 @@ export default function App() {
   const [dateFrom, setDateFrom] = useState(new Date(1598051730000));
   const [dateTo, setDateTo] = useState(new Date(1598051730000));
 
-  // Scans availbale BLT Devices and adds them to the list "scannedDevices"
-  const scanDevices = () => {
-    console.log('scanning');
-    // display the Activityindicator
-    setIsLoading(true);
-
-    BLTManager.startDeviceScan(null, null, (error, scannedDevice) => {
-      if (error) {
-        console.warn(error);
-      }
-
-      // if a device is detected add the device to the list by dispatching the action into the reducer
-      // if (scannedDevice && scannedDevice.name != null) {
-      //   console.log(scannedDevice.name);
-      //   dispatch({
-      //     type: 'ADD_DEVICE',
-      //     payload: {
-      //       device: scannedDevice,
-      //       label: scannedDevice.name,
-      //       value: scannedDevice.id,
-      //     },
-      //   });
-      // }
-
-      if (scannedDevice && scannedDevice.name == 'WordclockBLE') {
-        BLTManager.stopDeviceScan();
-        connectDevice(scannedDevice);
-      }
-    });
-
-    // stop scanning devices after 5 seconds
-    setTimeout(() => {
-      BLTManager.stopDeviceScan();
-      setIsLoading(false);
-    }, 5000);
-  };
+  var heartbeatTimeout: NodeJS.Timeout;
 
   // BLT Connections
   const BLTfunctions = {
@@ -173,42 +142,76 @@ export default function App() {
     isConnected: isConnected,
   };
 
-  // handle the device disconnection (poorly)
-  async function disconnectDevice() {
-    console.log('Disconnecting start');
+  // Scans availbale BLT Devices and adds them to the list "scannedDevices"
+  async function scanDevices() {
+    PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      {
+        title: 'Permission Localisation Bluetooth',
+        message: 'Requirement for Bluetooth',
+        buttonNeutral: 'Later',
+        buttonNegative: 'Cancel',
+        buttonPositive: 'OK',
+      },
+    )
+      .then(answere => {
+        console.log('scanning');
+        Toast.show('Scanning');
+        // display the Activityindicator
+        setIsLoading(true);
+        let found = false;
 
-    if (connectedDevice != null) {
-      const isDeviceConnected = await connectedDevice.isConnected();
-      if (isDeviceConnected) {
-        // nightmodepromise?.remove();
-        // summertimepromise?.remove();
-        // timezonepromise?.remove();
-        BLTManager.cancelTransaction('summertimetransaction');
-        BLTManager.cancelTransaction('nightmodetransaction');
-        BLTManager.cancelTransaction('nightmodebrighttransaction');
-        BLTManager.cancelTransaction('nightmodefromtransaction');
-        BLTManager.cancelTransaction('nightmodetotransaction');
-        BLTManager.cancelTransaction('timezonetransaction');
-        BLTManager.cancelTransaction('brightnesstransaction');
-        BLTManager.cancelTransaction('colortransaction');
-        BLTManager.cancelTransaction('wifisconnectedtransaction');
-        BLTManager.cancelTransaction('messagetransaction');
-        BLTManager.cancelTransaction('ssidtransaction');
+        BLTManager.startDeviceScan(null, null, (error, scannedDevice) => {
+          if (error) {
+            console.warn(error);
+          }
 
-        BLTManager.cancelDeviceConnection(connectedDevice.id).then(() =>
-          console.log('DC completed'),
-        );
-      }
+          // if a device is detected add the device to the list by dispatching the action into the reducer
+          // if (scannedDevice && scannedDevice.name != null) {
+          //   console.log(scannedDevice.name);
+          //   dispatch({
+          //     type: 'ADD_DEVICE',
+          //     payload: {
+          //       device: scannedDevice,
+          //       label: scannedDevice.name,
+          //       value: scannedDevice.id,
+          //     },
+          //   });
+          // }
 
-      const connectionStatus = await connectedDevice.isConnected();
-      if (!connectionStatus) {
-        setIsConnected(false);
-      }
-    }
+          if (scannedDevice && scannedDevice.name == 'WordclockBLE') {
+            BLTManager.stopDeviceScan();
+            found = true;
+            connectDevice(scannedDevice);
+          }
+        });
+
+        // stop scanning devices after 5 seconds
+        setTimeout(() => {
+          BLTManager.stopDeviceScan();
+          setIsLoading(false);
+          if (found == false) {
+            Toast.show('Word clock not found');
+          }
+        }, 5000);
+      })
+      .catch();
   }
 
   //Connect the device and start monitoring characteristics
   async function connectDevice(device: Device) {
+    const granted = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+      {
+        title: 'Permission Localisation Bluetooth',
+        message: 'Requirement for Bluetooth',
+        buttonNeutral: 'Later',
+        buttonNegative: 'Cancel',
+        buttonPositive: 'OK',
+      },
+    );
+    console.log(granted);
+
     setIsLoading(true);
     console.log('connecting to Device:', device.name);
 
@@ -217,14 +220,35 @@ export default function App() {
       .then(device => {
         setConnectedDevice(device);
         setIsConnected(true);
+
         return device.discoverAllServicesAndCharacteristics();
       })
+      .catch()
       .then(device => {
-        //Read inital values
+        //Set what happenes on a DC
         BLTManager.onDeviceDisconnected(device.id, (error, device) => {
           console.log('Device DC');
+          clearTimeout(heartbeatTimeout);
           setIsConnected(false);
         });
+
+        // Setup the Hearbeat to the ESP
+        heartbeatTimeout = setInterval(() => {
+          console.log('Sending heartbeat');
+          BLTManager.writeCharacteristicWithResponseForDevice(
+            connectedDevice?.id,
+            SERVICE_UUID,
+            HEARTBEAT_CHARACTERISTIC_UUID,
+            base64.encode('heartbeat'),
+          )
+            .then()
+            .catch(error => {
+              console.log(error);
+            });
+        }, HEARTBEAT_INTERVAL);
+
+        //Read inital values
+
         //Summertime
         device
           .readCharacteristicForService(
@@ -233,7 +257,8 @@ export default function App() {
           )
           .then(valenc => {
             setSummertime(StringToBool(base64.decode(valenc?.value)));
-          });
+          })
+          .catch();
 
         //Nightmode
         device
@@ -273,7 +298,8 @@ export default function App() {
             // setDateFrom(
             //   new Date('2016-01-04 ' + values[0] + ':' + values[1] + ':23'),
             // );
-          });
+          })
+          .catch();
 
         //NightmodeTo
         device
@@ -294,7 +320,8 @@ export default function App() {
             // const fulldate =
             //   '2016-01-04 ' + values[0] + ':' + values[1] + ':23';
             // setDateTo(new Date(fulldate));
-          });
+          })
+          .catch();
 
         //Timezone
         device
@@ -304,7 +331,8 @@ export default function App() {
           )
           .then(valenc => {
             setTimeZone(base64.decode(valenc?.value));
-          });
+          })
+          .catch();
 
         //Brightness
         device
@@ -314,14 +342,16 @@ export default function App() {
           )
           .then(valenc => {
             setBrightness(parseInt(base64.decode(valenc?.value)));
-          });
+          })
+          .catch();
 
         //Color
         device
           .readCharacteristicForService(SERVICE_UUID, COLOR_CHARACTERISTIC_UUID)
           .then(valenc => {
             setColor(base64.decode(valenc?.value));
-          });
+          })
+          .catch();
 
         //WifiConnected
         device
@@ -330,8 +360,9 @@ export default function App() {
             WIFICONNECTED_CHARACTERISTIC_UUID,
           )
           .then(valenc => {
-            setMessage(StringToBool(base64.decode(valenc?.value)));
-          });
+            setWifiConnected(StringToBool(base64.decode(valenc?.value)));
+          })
+          .catch();
 
         //SSID
         device
@@ -341,9 +372,10 @@ export default function App() {
           )
           .then(valenc => {
             setSsid(base64.decode(valenc?.value));
-          });
+          })
+          .catch();
 
-        //Messagve
+        //Message
         device
           .readCharacteristicForService(
             WIFI_SERVICE_UUID,
@@ -351,7 +383,8 @@ export default function App() {
           )
           .then(valenc => {
             setMessage(base64.decode(valenc?.value));
-          });
+          })
+          .catch();
 
         //monitor values
 
@@ -554,18 +587,61 @@ export default function App() {
                 'Message received: ',
                 base64.decode(characteristic?.value),
               );
+              Toast.show(base64.decode(characteristic?.value));
             }
           },
           'messagetransaction',
         );
+      })
+      .catch(error => {
+        console.log('Could not connect');
+        Toast.show('Connection failed');
       });
 
     setIsLoading(false);
     console.log('Connection established');
+
+    Toast.show('Connection established');
+  }
+
+  // handle the device disconnection (poorly)
+  async function disconnectDevice() {
+    console.log('Disconnecting start');
+
+    if (connectedDevice != null) {
+      const isDeviceConnected = await connectedDevice.isConnected();
+      if (isDeviceConnected) {
+        // nightmodepromise?.remove();
+        // summertimepromise?.remove();
+        // timezonepromise?.remove();
+        BLTManager.cancelTransaction('summertimetransaction');
+        BLTManager.cancelTransaction('nightmodetransaction');
+        BLTManager.cancelTransaction('nightmodebrighttransaction');
+        BLTManager.cancelTransaction('nightmodefromtransaction');
+        BLTManager.cancelTransaction('nightmodetotransaction');
+        BLTManager.cancelTransaction('timezonetransaction');
+        BLTManager.cancelTransaction('brightnesstransaction');
+        BLTManager.cancelTransaction('colortransaction');
+        BLTManager.cancelTransaction('wifisconnectedtransaction');
+        BLTManager.cancelTransaction('messagetransaction');
+        BLTManager.cancelTransaction('ssidtransaction');
+        clearTimeout(heartbeatTimeout);
+        BLTManager.cancelDeviceConnection(connectedDevice.id)
+          .then(() => {
+            console.log('DC completed');
+            Toast.show('Disconnected');
+          })
+          .catch();
+      }
+
+      const connectionStatus = await connectedDevice.isConnected();
+      if (!connectionStatus) {
+        setIsConnected(false);
+      }
+    }
   }
 
   // Wordclock data
-
   const WordclockDataOut = {
     summertime: summertime,
 
@@ -592,12 +668,14 @@ export default function App() {
         WIFI_SERVICE_UUID,
         PASSWORD_CHARACTERISTIC_UUID,
         base64.encode(value),
-      ).then(characteristic => {
-        console.log(
-          'Password changed to :',
-          base64.decode(characteristic.value),
-        );
-      });
+      )
+        .then(characteristic => {
+          console.log(
+            'Password changed to :',
+            base64.decode(characteristic.value),
+          );
+        })
+        .catch();
     },
 
     setSsid: (value: string) => {
@@ -606,9 +684,11 @@ export default function App() {
         WIFI_SERVICE_UUID,
         SSID_CHARACTERISTIC_UUID,
         base64.encode(value),
-      ).then(characteristic => {
-        console.log('SSID changed to :', base64.decode(characteristic.value));
-      });
+      )
+        .then(characteristic => {
+          console.log('SSID changed to :', base64.decode(characteristic.value));
+        })
+        .catch();
     },
 
     setDateFrom: (value: Date) => {
@@ -625,12 +705,14 @@ export default function App() {
         NIGHT_SERVICE_UUID,
         NIGHTMODE_CHARACTERISTIC_UUID,
         base64.encode(BoolToString(value)),
-      ).then(characteristic => {
-        console.log(
-          'Nightmode changed to :',
-          base64.decode(characteristic.value),
-        );
-      });
+      )
+        .then(characteristic => {
+          console.log(
+            'Nightmode changed to :',
+            base64.decode(characteristic.value),
+          );
+        })
+        .catch();
     },
 
     setNightmodebright: (value: number) => {
@@ -639,12 +721,14 @@ export default function App() {
         NIGHT_SERVICE_UUID,
         NIGHTMODEBRIGHT_CHARACTERISTIC_UUID,
         base64.encode(value.toString()),
-      ).then(characteristic => {
-        console.log(
-          'Nightmodebrightness changed to :',
-          base64.decode(characteristic.value),
-        );
-      });
+      )
+        .then(characteristic => {
+          console.log(
+            'Nightmodebrightness changed to :',
+            base64.decode(characteristic.value),
+          );
+        })
+        .catch();
     },
 
     setNightmodeFrom: (value: string) => {
@@ -653,12 +737,14 @@ export default function App() {
         NIGHT_SERVICE_UUID,
         NIGHTMODEFROM_CHARACTERISTIC_UUID,
         base64.encode(value),
-      ).then(characteristic => {
-        console.log(
-          'NightmodeFrom changed to :',
-          base64.decode(characteristic.value),
-        );
-      });
+      )
+        .then(characteristic => {
+          console.log(
+            'NightmodeFrom changed to :',
+            base64.decode(characteristic.value),
+          );
+        })
+        .catch();
     },
 
     setNightmodeTo: (value: string) => {
@@ -667,12 +753,14 @@ export default function App() {
         NIGHT_SERVICE_UUID,
         NIGHTMODETO_CHARACTERISTIC_UUID,
         base64.encode(value),
-      ).then(characteristic => {
-        console.log(
-          'NightmodeTo changed to :',
-          base64.decode(characteristic.value),
-        );
-      });
+      )
+        .then(characteristic => {
+          console.log(
+            'NightmodeTo changed to :',
+            base64.decode(characteristic.value),
+          );
+        })
+        .catch();
     },
 
     setSummertime: (value: boolean) => {
@@ -681,12 +769,14 @@ export default function App() {
         SERVICE_UUID,
         SUMMERTIME_CHARACTERISTIC_UUID,
         base64.encode(BoolToString(value)),
-      ).then(characteristic => {
-        console.log(
-          'Summertime changed to :',
-          base64.decode(characteristic.value),
-        );
-      });
+      )
+        .then(characteristic => {
+          console.log(
+            'Summertime changed to :',
+            base64.decode(characteristic.value),
+          );
+        })
+        .catch();
     },
 
     setTimezone: (value: string) => {
@@ -695,12 +785,14 @@ export default function App() {
         SERVICE_UUID,
         TIMEZONE_CHARACTERISTIC_UUID,
         base64.encode(value),
-      ).then(characteristic => {
-        console.log(
-          'Timezone changed to :',
-          base64.decode(characteristic.value),
-        );
-      });
+      )
+        .then(characteristic => {
+          console.log(
+            'Timezone changed to :',
+            base64.decode(characteristic.value),
+          );
+        })
+        .catch();
     },
 
     setBrightness: (value: number) => {
@@ -709,12 +801,14 @@ export default function App() {
         SERVICE_UUID,
         BRIGHTNETT_CHARACTERISTIC_UUID,
         base64.encode(value.toString()),
-      ).then(characteristic => {
-        console.log(
-          'Brightness changed to :',
-          base64.decode(characteristic.value),
-        );
-      });
+      )
+        .then(characteristic => {
+          console.log(
+            'Brightness changed to :',
+            base64.decode(characteristic.value),
+          );
+        })
+        .catch();
     },
 
     setColor: (value: string) => {
@@ -723,12 +817,14 @@ export default function App() {
         SERVICE_UUID,
         COLOR_CHARACTERISTIC_UUID,
         base64.encode(value),
-      ).then(characteristic => {
-        console.log(
-          'Brightness changed to :',
-          base64.decode(characteristic.value),
-        );
-      });
+      )
+        .then(characteristic => {
+          console.log(
+            'Brightness changed to :',
+            base64.decode(characteristic.value),
+          );
+        })
+        .catch();
     },
   };
 
@@ -736,10 +832,12 @@ export default function App() {
     <BLTparameters.Provider value={BLTfunctions}>
       <WordclockData.Provider value={WordclockDataOut}>
         {!isConnected ? (
-          <WelcomePage />
+          <View>
+            <Spinner visible={isLoading} />
+            <WelcomePage />
+          </View>
         ) : (
           <NavigationContainer>
-            <Spinner visible={isLoading} textContent={'Searching...'} />
             <MyTabs />
           </NavigationContainer>
         )}

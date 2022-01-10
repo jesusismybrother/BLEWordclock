@@ -10,6 +10,9 @@ int WiFi_RouterNetworkConnect(String txtSSID, String txtPassword)
   char *SSID = const_cast<char *>(txtSSID.c_str());
   char *Password = const_cast<char *>(txtPassword.c_str());
   int success = 1;
+  String message = "Trying to connect to " + txtSSID;
+  message_characteristic->setValue(const_cast<char *>(message.c_str()));
+  message_characteristic->notify();
 
   WiFi.begin(SSID, Password);
   WiFi.setHostname(HOSTNAME);
@@ -29,10 +32,20 @@ int WiFi_RouterNetworkConnect(String txtSSID, String txtPassword)
   {
     success = -1;
     wificonnected = false;
+    wificonnected_characteristic->setValue("0");
+    wificonnected_characteristic->notify();
+    String message = "Connection to Wifi failed";
+    message_characteristic->setValue(const_cast<char *>(message.c_str()));
+    message_characteristic->notify();
   }
   else
   {
     wificonnected = true;
+    wificonnected_characteristic->setValue("1");
+    wificonnected_characteristic->notify();
+    String message = "Connection to Wifi successful";
+    message_characteristic->setValue(const_cast<char *>(message.c_str()));
+    message_characteristic->notify();
   }
 
   Serial.println(WiFi.localIP());
@@ -45,11 +58,15 @@ class MyServerCallbacks : public BLEServerCallbacks
   void onConnect(BLEServer *pServer)
   {
     Serial.println("Connected");
+    connectionID = pServer->getConnId();
+    heartbeatTimer = millis();
+    isConnected = true;
   };
 
   void onDisconnect(BLEServer *pServer)
   {
     Serial.println("Disconnected");
+    isConnected = false;
   }
 };
 
@@ -57,85 +74,93 @@ class CharacteristicsCallbacks : public BLECharacteristicCallbacks
 {
   void onWrite(BLECharacteristic *pCharacteristic)
   {
-    Serial.print("Value Written ");
-    Serial.println(pCharacteristic->getValue().c_str());
-    pCharacteristic->notify();
 
-    if (pCharacteristic == nightmode_characteristic)
+    if (pCharacteristic == heartbeat_characteristic)
     {
-      NightmodeActive = pCharacteristic->getValue().c_str();
-      preferences.putString("NightmodeActive", NightmodeActive);
-      refreshInterface();
+      heartbeatTimer = millis();
     }
-
-    if (pCharacteristic == nightmodebright_characteristic)
+    else
     {
-      NightmodeBrightnessPercent = pCharacteristic->getValue().c_str();
-      preferences.putString("NightPerc", NightmodeBrightnessPercent);
-      refreshInterface();
-    }
+      Serial.print("Value Written ");
+      Serial.println(pCharacteristic->getValue().c_str());
+      pCharacteristic->notify();
 
-    if (pCharacteristic == nightmodefrom_characteristic)
-    {
-      NightmodeFrom = pCharacteristic->getValue().c_str();
-      preferences.putString("NightmodeFrom", NightmodeFrom);
-      refreshInterface();
-    }
-
-    if (pCharacteristic == nightmodeto_characteristic)
-    {
-      NightmodeTo = pCharacteristic->getValue().c_str();
-      preferences.putString("NightmodeTo", NightmodeTo);
-      refreshInterface();
-    }
-
-    if (pCharacteristic == summertime_characteristic)
-    {
-      SummertimeActive = pCharacteristic->getValue().c_str();
-      preferences.putString("DST", SummertimeActive);
-      refreshInterface();
-    }
-
-    if (pCharacteristic == timezone_characteristic)
-    {
-      TimezoneUMT = pCharacteristic->getValue().c_str();
-      preferences.putString("Timezone", TimezoneUMT);
-      refreshInterface();
-    }
-
-    if (pCharacteristic == color_characteristic)
-    {
-      ColorInHex = pCharacteristic->getValue().c_str();
-      preferences.putString("ColorHEX", ColorInHex);
-      refreshInterface();
-    }
-
-    if (pCharacteristic == brightness_characteristic)
-    {
-      BrightnessPercent = pCharacteristic->getValue().c_str();
-      preferences.putString("Perc", BrightnessPercent);
-      refreshInterface();
-    }
-
-    if (pCharacteristic == ssid_characteristic)
-    {
-      WIFISSID = pCharacteristic->getValue().c_str();
-      preferences.putString("SSID", WIFISSID);
-    }
-
-    if (pCharacteristic == password_characteristic)
-    {
-      WIFIPassword = pCharacteristic->getValue().c_str();
-      preferences.putString("Password", WIFIPassword);
-      message_characteristic->setValue("Connecting to new Network");
-      message_characteristic->notify();
-
-      if (WiFi.status() == WL_CONNECTED)
+      if (pCharacteristic == nightmode_characteristic)
       {
-        WiFi.disconnect();
+        NightmodeActive = pCharacteristic->getValue().c_str();
+        preferences.putString("NightmodeActive", NightmodeActive);
+        refreshInterface();
       }
 
-      WiFi_RouterNetworkConnect(WIFISSID, WIFIPassword);
+      if (pCharacteristic == nightmodebright_characteristic)
+      {
+        NightmodeBrightnessPercent = pCharacteristic->getValue().c_str();
+        preferences.putString("NightPerc", NightmodeBrightnessPercent);
+        refreshInterface();
+      }
+
+      if (pCharacteristic == nightmodefrom_characteristic)
+      {
+        NightmodeFrom = pCharacteristic->getValue().c_str();
+        preferences.putString("NightmodeFrom", NightmodeFrom);
+        refreshInterface();
+      }
+
+      if (pCharacteristic == nightmodeto_characteristic)
+      {
+        NightmodeTo = pCharacteristic->getValue().c_str();
+        preferences.putString("NightmodeTo", NightmodeTo);
+        refreshInterface();
+      }
+
+      if (pCharacteristic == summertime_characteristic)
+      {
+        SummertimeActive = pCharacteristic->getValue().c_str();
+        preferences.putString("DST", SummertimeActive);
+        refreshInterface();
+      }
+
+      if (pCharacteristic == timezone_characteristic)
+      {
+        TimezoneUMT = pCharacteristic->getValue().c_str();
+        preferences.putString("Timezone", TimezoneUMT);
+        refreshInterface();
+      }
+
+      if (pCharacteristic == color_characteristic)
+      {
+        ColorInHex = pCharacteristic->getValue().c_str();
+        preferences.putString("ColorHEX", ColorInHex);
+        refreshInterface();
+      }
+
+      if (pCharacteristic == brightness_characteristic)
+      {
+        BrightnessPercent = pCharacteristic->getValue().c_str();
+        preferences.putString("Perc", BrightnessPercent);
+        refreshInterface();
+      }
+
+      if (pCharacteristic == ssid_characteristic)
+      {
+        WIFISSID = pCharacteristic->getValue().c_str();
+        preferences.putString("SSID", WIFISSID);
+      }
+
+      if (pCharacteristic == password_characteristic)
+      {
+        WIFIPassword = pCharacteristic->getValue().c_str();
+        preferences.putString("Password", WIFIPassword);
+        message_characteristic->setValue("Connecting to new Network");
+        message_characteristic->notify();
+
+        if (WiFi.status() == WL_CONNECTED)
+        {
+          WiFi.disconnect();
+        }
+
+        WiFi_RouterNetworkConnect(WIFISSID, WIFIPassword);
+      }
     }
   }
 };
@@ -158,7 +183,7 @@ void setLedList(int LedList[], int length, int redval, int greenval, int blueval
   }
 }
 
-void sethour(int h) // Stunden setzen
+void sethour(int h) // hours setzen
 {
   if (h == 13)
   {
@@ -213,7 +238,7 @@ void sethour(int h) // Stunden setzen
   }
 }
 
-void setminutes(int m, int h) // minuten setzen
+void displayTimeDE(int m, int h) // minutes setzen
 {
   FastLED.clear();
 
@@ -230,6 +255,7 @@ void setminutes(int m, int h) // minuten setzen
     {
       leds[56] = CRGB::Black;
     }
+    setLedList(uhr, sizeof(uhr), redval, blueval, greenval);
   }
 
   if (m >= 5 && m < 10)
@@ -548,8 +574,8 @@ void clockGen()
     DST = true; // Summer months
   //***  Detect the beginning of theU DST in March and set DST = 1
   if (months == 3 && days - dow >= 25)
-  {                       // Begin of summer time
-    if (stunden >= 3 - 1) // MESZ – 1 hour
+  {                     // Begin of summer time
+    if (hours >= 3 - 1) // MESZ – 1 hour
       DST = true;
   }
 
@@ -558,7 +584,7 @@ void clockGen()
     DST = true;
   if (months == 10 && days - dow >= 25)
   {
-    if (stunden >= 3 - 1)
+    if (hours >= 3 - 1)
     {
       DST = false;
       //     Serial.println("We have winter time");
@@ -570,7 +596,7 @@ void clockGen()
     }
   }
   if (DST == true)
-    stunden += 1; // Add 1 hour due to detected DST
+    hours += 1; // Add 1 hour due to detected DST
 }
 
 String split(String s, char parser, int index)
@@ -613,19 +639,19 @@ void dealwithnighttime()
   {
     if (temphourstart > temphourend)
     {
-      if (stunden >= temphourstart || stunden <= temphourend)
+      if (hours >= temphourstart || hours <= temphourend)
       {
         // nachthelligkeit
-        if (stunden != temphourstart && stunden != temphourend)
+        if (hours != temphourstart && hours != temphourend)
         {
           nighttime = true;
         }
 
-        if (stunden == temphourstart && minuten >= tempminstart)
+        if (hours == temphourstart && minutes >= tempminstart)
         {
           nighttime = true;
         }
-        if (stunden == temphourend && minuten <= tempminend)
+        if (hours == temphourend && minutes <= tempminend)
         {
           nighttime = true;
         }
@@ -634,10 +660,10 @@ void dealwithnighttime()
 
     if (temphourstart == temphourend)
     {
-      if (stunden == temphourstart && stunden == temphourend)
+      if (hours == temphourstart && hours == temphourend)
       {
 
-        if (minuten >= tempminstart && minuten <= tempminend)
+        if (minutes >= tempminstart && minutes <= tempminend)
         {
           nighttime = true;
         }
@@ -647,18 +673,18 @@ void dealwithnighttime()
     if (temphourstart < temphourend)
     {
 
-      if (stunden >= temphourstart && stunden <= temphourend)
+      if (hours >= temphourstart && hours <= temphourend)
       {
         // Nacht
-        if (stunden != temphourstart && stunden != temphourend)
+        if (hours != temphourstart && hours != temphourend)
         {
           nighttime = true;
         }
-        if (stunden == temphourstart && minuten >= tempminstart)
+        if (hours == temphourstart && minutes >= tempminstart)
         {
           nighttime = true;
         }
-        if (stunden == temphourend && minuten <= tempminend)
+        if (hours == temphourend && minutes <= tempminend)
         {
           nighttime = true;
         }
@@ -691,9 +717,9 @@ void updateTime()
     Serial.println("Failed to obtain time");
     return;
   }
-  stunden = timeinfo.tm_hour;
-  minuten = timeinfo.tm_min;
-  sekunden = timeinfo.tm_sec;
+  hours = timeinfo.tm_hour;
+  minutes = timeinfo.tm_min;
+  seconds = timeinfo.tm_sec;
   years = timeinfo.tm_year + 1900;
   months = timeinfo.tm_mon + 1;
   days = timeinfo.tm_mday;
@@ -703,22 +729,35 @@ void updateTime()
     clockGen();
   }
 
-  stunden = stunden + TimezoneUMT.toInt();
+  int extraminutes = ((TimezoneUMT.toFloat()) - TimezoneUMT.toInt()) * 100;
+  int extrahours = TimezoneUMT.toInt();
 
-  if (stunden < 12)
+  minutes += extraminutes;
+
+  if (minutes > 60)
   {
-    stunden = stunden + 24;
+    minutes -= 60;
+    hours += 1;
   }
-  if (stunden > 24)
+
+  hours = hours + extrahours;
+
+  // pretty sure this does nothing
+  if (hours < 12)
   {
-    stunden = stunden - 24;
+    hours = hours + 24;
+  }
+
+  if (hours > 24)
+  {
+    hours = hours - 24;
   }
 
   dealwithnighttime();
 
-  if (stunden > 12)
+  if (hours > 12)
   {
-    stunden = stunden - 12;
+    hours = hours - 12;
   }
 }
 
@@ -777,13 +816,6 @@ void setup()
           BLECharacteristic::PROPERTY_NOTIFY |
           BLECharacteristic::PROPERTY_INDICATE);
 
-  summertime_characteristic = pService->createCharacteristic(
-      SUMMERTIME_CHARACTERISTIC_UUID,
-      BLECharacteristic::PROPERTY_READ |
-          BLECharacteristic::PROPERTY_WRITE |
-          BLECharacteristic::PROPERTY_NOTIFY |
-          BLECharacteristic::PROPERTY_INDICATE);
-
   nightmodefrom_characteristic = pNightService->createCharacteristic(
       NIGHTMODEFROM_CHARACTERISTIC_UUID,
       BLECharacteristic::PROPERTY_READ |
@@ -793,6 +825,13 @@ void setup()
 
   nightmodeto_characteristic = pNightService->createCharacteristic(
       NIGHTMODETO_CHARACTERISTIC_UUID,
+      BLECharacteristic::PROPERTY_READ |
+          BLECharacteristic::PROPERTY_WRITE |
+          BLECharacteristic::PROPERTY_NOTIFY |
+          BLECharacteristic::PROPERTY_INDICATE);
+
+  summertime_characteristic = pService->createCharacteristic(
+      SUMMERTIME_CHARACTERISTIC_UUID,
       BLECharacteristic::PROPERTY_READ |
           BLECharacteristic::PROPERTY_WRITE |
           BLECharacteristic::PROPERTY_NOTIFY |
@@ -814,6 +853,13 @@ void setup()
 
   color_characteristic = pService->createCharacteristic(
       COLOR_CHARACTERISTIC_UUID,
+      BLECharacteristic::PROPERTY_READ |
+          BLECharacteristic::PROPERTY_WRITE |
+          BLECharacteristic::PROPERTY_NOTIFY |
+          BLECharacteristic::PROPERTY_INDICATE);
+
+  heartbeat_characteristic = pService->createCharacteristic(
+      HEARTBEAT_CHARACTERISTIC_UUID,
       BLECharacteristic::PROPERTY_READ |
           BLECharacteristic::PROPERTY_WRITE |
           BLECharacteristic::PROPERTY_NOTIFY |
@@ -878,6 +924,9 @@ void setup()
   color_characteristic->setValue(const_cast<char *>(ColorInHex.c_str()));
   color_characteristic->setCallbacks(new CharacteristicsCallbacks());
 
+  heartbeat_characteristic->setValue("1");
+  heartbeat_characteristic->setCallbacks(new CharacteristicsCallbacks());
+
   wificonnected_characteristic->setValue("0");
   wificonnected_characteristic->setCallbacks(new CharacteristicsCallbacks());
 
@@ -918,13 +967,17 @@ void refreshInterface()
     }
     updateTime();
   }
+
   setColor();
-  setminutes(minuten, stunden);
+
+  // This sets the leds to display the time
+  displayTimeDE(minutes, hours);
+
   maintimer = millis();
 
-  Serial.print(stunden);
+  Serial.print(hours);
   Serial.print(':');
-  Serial.print(minuten);
+  Serial.print(minutes);
   Serial.println();
 }
 
@@ -936,4 +989,9 @@ void loop()
     refreshInterface();
   }
   delay(50);
+
+  if (isConnected && (millis() - heartbeatTimer > 10000))
+  {
+    pServer->disconnect(0);
+  }
 }

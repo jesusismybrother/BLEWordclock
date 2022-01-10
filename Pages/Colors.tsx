@@ -47,10 +47,11 @@ export function Colors() {
         hideControls={false}
         style={{
           width: 350,
-          height: 300,
+          height: 250,
         }}
         onColorChange={value => {
           setColor(fromHsv(value));
+          // WordclockDataContext.setColor(fromHsv(value)); //too slow
         }}
         color={toHsv(color)}
       />
