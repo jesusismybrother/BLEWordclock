@@ -12,37 +12,115 @@ int redval = 255;
 int greenval = 255;
 int blueval = 255;
 
+
+
 // Adresses of individual LEDs in groups
-int fuenf[4] = {1, 21, 22, 41};
-int zehn[4] = {80, 83, 100, 104};
-int viertel[7] = {3, 19, 24, 39, 44, 59, 64};
-int zwanzig[7] = {2, 20, 23, 40, 43, 60, 63};
-int halb[4] = {77, 86, 97, 107};
-
-int vor[3] = {25, 38, 45};
-int nach[4] = {58, 65, 78, 85};
-
 int min1[1] = {102};
 int min2[2] = {102, 0};
 int min3[3] = {102, 0, 113};
 int min4[4] = {102, 0, 113, 11};
 
-int esist[5] = {61, 62, 81, 101, 103};
 
-int stunde1[4] = {56, 67, 76, 87};
-int stunde2[4] = {76, 87, 96, 108};
-int stunde3[4] = {68, 75, 88, 95};
-int stunde4[4] = {8, 14, 29, 34};
-int stunde5[4] = {7, 15, 28, 35};
-int stunde6[5] = {52, 71, 72, 91, 92};
-int stunde7[6] = {6, 16, 27, 36, 47, 56};
-int stunde8[4] = {70, 73, 90, 93};
-int stunde9[4] = {49, 54, 69, 74};
-int stunde10[4] = {30, 33, 50, 53};
-int stunde11[3] = {89, 94, 110};
-int stunde12[5] = {17, 26, 37, 46, 57};
 
-int uhr[3] = {10, 12, 31};
+// DE
+int DE_five[4] = {1, 21, 22, 41};
+int DE_ten[4] = {80, 83, 100, 104};
+int DE_quarter[7] = {3, 19, 24, 39, 44, 59, 64};
+int DE_twenty[7] = {2, 20, 23, 40, 43, 60, 63};
+int DE_half[4] = {77, 86, 97, 107};
+int DE_to[3] = {25, 38, 45};
+int DE_past[4] = {58, 65, 78, 85};
+int DE_ItIs[5] = {61, 62, 81, 101, 103};
+int DE_hour1[4] = {56, 67, 76, 87};
+int DE_hour2[4] = {76, 87, 96, 108};
+int DE_hour3[4] = {68, 75, 88, 95};
+int DE_hour4[4] = {8, 14, 29, 34};
+int DE_hour5[4] = {7, 15, 28, 35};
+int DE_hour6[5] = {52, 71, 72, 91, 92};
+int DE_hour7[6] = {6, 16, 27, 36, 47, 56};
+int DE_hour8[4] = {70, 73, 90, 93};
+int DE_hour9[4] = {49, 54, 69, 74};
+int DE_hour10[4] = {30, 33, 50, 53};
+int DE_hour11[3] = {89, 94, 110};
+int DE_hour12[5] = {17, 26, 37, 46, 57};
+int DE_OClock[3] = {10, 12, 31};
+
+
+// EN
+int EN_five[4] = {44,39,24,19};
+int EN_ten[3] = {23,20,2};
+int EN_quarter[7] = {104,100,83,80,60,43,40};
+int EN_twenty[7] = {105,99,84,79,64,59,44};
+int EN_half[4] = {42,41,22,21};
+int EN_to[2] = {58,45};
+int EN_past[4] = {106,98,85,78};
+int EN_ItIs[4] = {103,101,81,62};
+int EN_hour1[4] = {37,26,17};
+int EN_hour2[3] = {25,18,4};
+int EN_hour3[5] = {49,34,29,14,8};
+int EN_hour4[3] = {110,94,89};
+int EN_hour5[4] = {96,87,76,67};
+int EN_hour6[3] = {30,13,9};
+int EN_hour7[5] = {47,36,27,16,6};
+int EN_hour8[5] = {90,73,70,53,50};
+int EN_hour9[4] = {12,92,91,72};
+int EN_hour10[4] = {35,28,15,7};
+int EN_hour11[6] = {107,97,86,77,66,57};
+int EN_hour12[6] = {109,95,88,75,68,55};
+int EN_OClock[6] = {52,51,32,31,12,10};
+
+const int numberLenguages=2;
+
+
+int *five[numberLenguages] = {DE_five,EN_five};
+int *ten[numberLenguages] = {DE_ten,EN_ten};
+int *quarter[numberLenguages] = {DE_quarter,EN_quarter};
+int *twenty[numberLenguages] = {DE_twenty,EN_twenty};
+int *half[numberLenguages] = {DE_half,EN_half};
+int *to[numberLenguages] = {DE_to,EN_to};
+int *past[numberLenguages] = {DE_past,EN_past};
+int *ItIs[numberLenguages] = {DE_ItIs,EN_ItIs};
+int *hour1[numberLenguages] = {DE_hour1,EN_hour1};
+int *hour2[numberLenguages] = {DE_hour2,EN_hour2};
+int *hour3[numberLenguages] = {DE_hour3,EN_hour3};
+int *hour4[numberLenguages] = {DE_hour4,EN_hour4};
+int *hour5[numberLenguages] = {DE_hour5,EN_hour5};
+int *hour6[numberLenguages] = {DE_hour6,EN_hour6};
+int *hour7[numberLenguages] = {DE_hour7,EN_hour7};
+int *hour8[numberLenguages] = {DE_hour8,EN_hour8};
+int *hour9[numberLenguages] = {DE_hour9,EN_hour9};
+int *hour10[numberLenguages] = {DE_hour10,EN_hour10};
+int *hour11[numberLenguages] = {DE_hour11,EN_hour11};
+int *hour12[numberLenguages] = {DE_hour12,EN_hour12};
+int *OClock[numberLenguages] = {DE_OClock,EN_OClock};
+
+
+int len_five[numberLenguages] = {4,4};
+int len_ten[numberLenguages] = {4,3};
+int len_quarter[numberLenguages] = {7,7};
+int len_twenty[numberLenguages] = {7,7};
+int len_half[numberLenguages] = {4,4};
+int len_to[numberLenguages] = {3,2};
+int len_past[numberLenguages] = {4,4};
+int len_ItIs[numberLenguages] = {5,4};
+int len_hour1[numberLenguages] = {4,3};
+int len_hour2[numberLenguages] = {4,3};
+int len_hour3[numberLenguages] = {4,5};
+int len_hour4[numberLenguages] = {4,3};
+int len_hour5[numberLenguages] = {4,4};
+int len_hour6[numberLenguages] = {5,3};
+int len_hour7[numberLenguages] = {6,5};
+int len_hour8[numberLenguages] = {4,5};
+int len_hour9[numberLenguages] = {4,4};
+int len_hour10[numberLenguages] = {4,4};
+int len_hour11[numberLenguages] = {3,6};
+int len_hour12[numberLenguages] = {5,6};
+int len_OClock[numberLenguages] = {3,6};
+
+
+
+
+
 
 // Configurations
 
@@ -56,8 +134,13 @@ String NightmodeFrom = "22:00";
 String NightmodeTo = "07:00";
 String NightmodeActive = "0";
 String NightmodeBrightnessPercent = "10";
-String WIFISSID = "FRITZ!Box 6660 Cable DS";
-String WIFIPassword = "00834435201708840594";
+String WIFISSID = "setup";
+String WIFIPassword = "12345678";
+String Language = "0";
+
+// 0=DE
+// 1=EN
+
 
 // Timekeeping
 int rtcpresent = 0;
