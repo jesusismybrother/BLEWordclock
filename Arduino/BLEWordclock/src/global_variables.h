@@ -49,8 +49,8 @@ int DE_OClock[3] = {10, 12, 31};
 // EN
 int EN_five[4] = {44,39,24,19};
 int EN_ten[3] = {23,20,2};
-int EN_quarter[7] = {104,100,83,80,60,43,40};
-int EN_twenty[7] = {105,99,84,79,64,59,44};
+int EN_quarter[7] = {104,100,83,80,60,43,63};
+int EN_twenty[6] = {105,99,84,79,64,59};
 int EN_half[4] = {42,41,22,21};
 int EN_to[2] = {58,45};
 int EN_past[4] = {106,98,85,78};
@@ -98,7 +98,7 @@ int *OClock[numberLenguages] = {DE_OClock,EN_OClock};
 int len_five[numberLenguages] = {4,4};
 int len_ten[numberLenguages] = {4,3};
 int len_quarter[numberLenguages] = {7,7};
-int len_twenty[numberLenguages] = {7,7};
+int len_twenty[numberLenguages] = {7,6};
 int len_half[numberLenguages] = {4,4};
 int len_to[numberLenguages] = {3,2};
 int len_past[numberLenguages] = {4,4};
@@ -136,7 +136,7 @@ String NightmodeActive = "0";
 String NightmodeBrightnessPercent = "10";
 String WIFISSID = "setup";
 String WIFIPassword = "12345678";
-String Language = "0";
+String Language = "1";
 
 // 0=DE
 // 1=EN
@@ -192,6 +192,7 @@ BLECharacteristic *nightmodeto_characteristic = NULL;
 BLECharacteristic *color_characteristic = NULL;
 BLECharacteristic *brightness_characteristic = NULL;
 BLECharacteristic *heartbeat_characteristic = NULL;
+BLECharacteristic *language_characteristic = NULL;
 
 BLECharacteristic *message_characteristic = NULL;
 
@@ -216,6 +217,7 @@ BLECharacteristic *password_characteristic = NULL;
 #define BRIGHTNETT_CHARACTERISTIC_UUID "5b1d822c-20ac-4286-a1ac-dd991d6b3e8f"
 #define COLOR_CHARACTERISTIC_UUID "63311740-35c8-4f20-9453-51c12f4bba04"
 #define HEARTBEAT_CHARACTERISTIC_UUID "90853600-1dbb-4e78-9510-ec7a5762bed5"
+#define LANGUAGE_CHARACTERISTIC_UUID "7e196076-ffc6-40f9-817d-2e090b669f92"
 
 #define WIFI_SERVICE_UUID "f7c75cd0-2082-4fd1-8d7d-94523bc32688"
 

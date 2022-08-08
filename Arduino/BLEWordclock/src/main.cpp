@@ -127,6 +127,13 @@ class CharacteristicsCallbacks : public BLECharacteristicCallbacks
         refreshInterface();
       }
 
+      if (pCharacteristic == language_characteristic)
+      {
+        Language = pCharacteristic->getValue().c_str();
+        preferences.putString("Language", Language);
+        refreshInterface();
+      }
+
       if (pCharacteristic == color_characteristic)
       {
         ColorInHex = pCharacteristic->getValue().c_str();
@@ -481,14 +488,14 @@ void initvalues()
   {
     preferences.putString("Password", WIFIPassword);
   }
-  if (strLanguage != "")
-  {
-    Language = strLanguage;
-  }
-  else
-  {
-    preferences.putString("Language", Language);
-  }
+  // if (strLanguage != "")
+  // {
+  //   Language = strLanguage;
+  // }
+  // else
+  // {
+  //   preferences.putString("Language", Language);
+  // }
 }
 
 byte calcDayOfWeek(byte y, byte m, byte d)
@@ -884,6 +891,13 @@ void setup()
           BLECharacteristic::PROPERTY_NOTIFY |
           BLECharacteristic::PROPERTY_INDICATE);
 
+  language_characteristic = pService->createCharacteristic(
+      LANGUAGE_CHARACTERISTIC_UUID,
+      BLECharacteristic::PROPERTY_READ |
+          BLECharacteristic::PROPERTY_WRITE |
+          BLECharacteristic::PROPERTY_NOTIFY |
+          BLECharacteristic::PROPERTY_INDICATE);
+
   wificonnected_characteristic = pWifiService->createCharacteristic(
       WIFICONNECTED_CHARACTERISTIC_UUID,
       BLECharacteristic::PROPERTY_READ |
@@ -946,6 +960,9 @@ void setup()
   heartbeat_characteristic->setValue("1");
   heartbeat_characteristic->setCallbacks(new CharacteristicsCallbacks());
 
+  language_characteristic->setValue(const_cast<char *>(Language.c_str()));
+  language_characteristic->setCallbacks(new CharacteristicsCallbacks());
+
   wificonnected_characteristic->setValue("0");
   wificonnected_characteristic->setCallbacks(new CharacteristicsCallbacks());
 
@@ -1005,14 +1022,6 @@ void loop()
 
   if (millis() - maintimer > 5000)
   {
-    if(Language=="0")
-    {
-      Language="1";
-    }
-    else
-    {
-      Language="0";
-    }
     refreshInterface();
   }
   delay(50);
