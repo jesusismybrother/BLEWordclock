@@ -74,11 +74,12 @@ const NIGHTMODEFROM_CHARACTERISTIC_UUID =
 const NIGHTMODETO_CHARACTERISTIC_UUID = '8ee0395f-8cf1-4599-88b7-265b5eec79d0';
 const NIGHTMODEBRIGHT_CHARACTERISTIC_UUID =
   'a10d6655-a7ab-41d5-b61b-05631d147fad';
+const LANGUAGE_CHARACTERISTIC_UUID = '7e196076-ffc6-40f9-817d-2e090b669f92';
 
 const COLOR_CHARACTERISTIC_UUID = '63311740-35c8-4f20-9453-51c12f4bba04';
 const BRIGHTNETT_CHARACTERISTIC_UUID = '5b1d822c-20ac-4286-a1ac-dd991d6b3e8f';
 
-const HEARTBEAT_INTERVAL = 1000;
+const HEARTBEAT_INTERVAL = 5000;
 
 function StringToBool(input: String) {
   if (input == '1') {
@@ -121,6 +122,8 @@ export default function App() {
   const [ssid, setSsid] = useState('');
   const [message, setMessage] = useState('');
 
+  const [language, setLanguage] = useState(0);
+
   const [nightmodeFrom, setNightmodeFrom] = useState('22:00');
   const [nightmodeTo, setNightmodeTo] = useState('05:00');
 
@@ -134,7 +137,7 @@ export default function App() {
 
   // BLT Connections
   const BLTfunctions = {
-    scanDevices,
+    scanDevices: scanDevices,
     connectDevice,
     disconnectDevice,
     foundDevices: scannedDevices,
@@ -227,27 +230,12 @@ export default function App() {
       .then(device => {
         //Set what happenes on a DC
         BLTManager.onDeviceDisconnected(device.id, (error, device) => {
+          setIsConnected(false);
           console.log('Device DC');
           clearTimeout(heartbeatTimeout);
-          setIsConnected(false);
         });
 
-        // Setup the Hearbeat to the ESP
-        heartbeatTimeout = setInterval(() => {
-          console.log('Sending heartbeat');
-          BLTManager.writeCharacteristicWithResponseForDevice(
-            connectedDevice?.id,
-            SERVICE_UUID,
-            HEARTBEAT_CHARACTERISTIC_UUID,
-            base64.encode('heartbeat'),
-          )
-            .then()
-            .catch(error => {
-              console.log(error);
-            });
-        }, HEARTBEAT_INTERVAL);
-
-        //Read inital values
+        // Read inital values
 
         //Summertime
         device
@@ -257,6 +245,17 @@ export default function App() {
           )
           .then(valenc => {
             setSummertime(StringToBool(base64.decode(valenc?.value)));
+          })
+          .catch();
+
+        //Language
+        device
+          .readCharacteristicForService(
+            SERVICE_UUID,
+            LANGUAGE_CHARACTERISTIC_UUID,
+          )
+          .then(valenc => {
+            setLanguage(parseInt(base64.decode(valenc?.value)));
           })
           .catch();
 
@@ -542,6 +541,22 @@ export default function App() {
           'brightnesstransaction',
         );
 
+        //Language
+        device.monitorCharacteristicForService(
+          SERVICE_UUID,
+          LANGUAGE_CHARACTERISTIC_UUID,
+          (error, characteristic) => {
+            if (characteristic?.value != null) {
+              setLanguage(parseInt(base64.decode(characteristic?.value)));
+              console.log(
+                'Lenguage update received: ',
+                base64.decode(characteristic?.value),
+              );
+            }
+          },
+          'languagetransaction',
+        );
+
         //WifiIsConnected
         device.monitorCharacteristicForService(
           WIFI_SERVICE_UUID,
@@ -598,6 +613,23 @@ export default function App() {
         Toast.show('Connection failed');
       });
 
+    // Setup the Hearbeat to the ESP
+
+    heartbeatTimeout = setInterval(() => {
+      console.log('Sending heartbeat');
+      console.log(device.id);
+      BLTManager.writeCharacteristicWithResponseForDevice(
+        device.id,
+        SERVICE_UUID,
+        HEARTBEAT_CHARACTERISTIC_UUID,
+        base64.encode('heartbeat'),
+      )
+        .then()
+        .catch(error => {
+          console.log(error);
+        });
+    }, HEARTBEAT_INTERVAL);
+
     setIsLoading(false);
     console.log('Connection established');
 
@@ -625,6 +657,7 @@ export default function App() {
         BLTManager.cancelTransaction('wifisconnectedtransaction');
         BLTManager.cancelTransaction('messagetransaction');
         BLTManager.cancelTransaction('ssidtransaction');
+        BLTManager.cancelTransaction('languagetransaction');
         clearTimeout(heartbeatTimeout);
         BLTManager.cancelDeviceConnection(connectedDevice.id)
           .then(() => {
@@ -633,7 +666,6 @@ export default function App() {
           })
           .catch();
       }
-
       const connectionStatus = await connectedDevice.isConnected();
       if (!connectionStatus) {
         setIsConnected(false);
@@ -651,6 +683,7 @@ export default function App() {
     nightmodeTo: nightmodeTo,
 
     timezone: timezone,
+    language: language,
 
     color: color,
     brightness: brightness,
@@ -680,7 +713,7 @@ export default function App() {
 
     setSsid: (value: string) => {
       BLTManager.writeCharacteristicWithResponseForDevice(
-        connectedDevice?.id,
+        connectedDevice.id,
         WIFI_SERVICE_UUID,
         SSID_CHARACTERISTIC_UUID,
         base64.encode(value),
@@ -795,6 +828,22 @@ export default function App() {
         .catch();
     },
 
+    setLanguage: (value: number) => {
+      BLTManager.writeCharacteristicWithResponseForDevice(
+        connectedDevice?.id,
+        SERVICE_UUID,
+        LANGUAGE_CHARACTERISTIC_UUID,
+        base64.encode(value.toString()),
+      )
+        .then(characteristic => {
+          console.log(
+            'Language changed to :',
+            base64.decode(characteristic.value),
+          );
+        })
+        .catch();
+    },
+
     setBrightness: (value: number) => {
       BLTManager.writeCharacteristicWithResponseForDevice(
         connectedDevice?.id,
@@ -841,6 +890,10 @@ export default function App() {
             <MyTabs />
           </NavigationContainer>
         )}
+
+        {/* <NavigationContainer>        
+            <MyTabs />
+          </NavigationContainer> */}
       </WordclockData.Provider>
     </BLTparameters.Provider>
   );

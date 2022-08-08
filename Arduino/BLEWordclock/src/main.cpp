@@ -53,6 +53,9 @@ int WiFi_RouterNetworkConnect(String txtSSID, String txtPassword)
   return success;
 }
 
+void(* resetFunc) (void) = 0;
+
+
 class MyServerCallbacks : public BLEServerCallbacks
 {
   void onConnect(BLEServer *pServer)
@@ -66,6 +69,7 @@ class MyServerCallbacks : public BLEServerCallbacks
   void onDisconnect(BLEServer *pServer)
   {
     Serial.println("Disconnected");
+    resetFunc(); //call reset
     isConnected = false;
   }
 };
@@ -1017,6 +1021,9 @@ void refreshInterface()
   Serial.println();
 }
 
+
+
+
 void loop()
 {
 
@@ -1031,3 +1038,5 @@ void loop()
     pServer->disconnect(0);
   }
 }
+
+
