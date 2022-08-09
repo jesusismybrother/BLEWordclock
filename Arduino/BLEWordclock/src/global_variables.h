@@ -137,6 +137,7 @@ String NightmodeBrightnessPercent = "10";
 String WIFISSID = "setup";
 String WIFIPassword = "12345678";
 String Language = "1";
+String DeviceName = "Wordclock";
 
 // 0=DE
 // 1=EN

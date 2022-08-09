@@ -4,6 +4,22 @@
 void refreshInterface();
 void setColor();
 
+
+String randomString(int length)
+{
+  String randString="";
+  for(int i = 0; i<length; i++)
+      {
+         byte randomValue = random(0, 36);
+         char letter = randomValue + 'a';
+         if(randomValue > 26)
+           letter = (randomValue - 26) + '0';
+         randString += letter;
+      }
+  return randString;
+}
+
+
 // Connect to router network and return 1 (success) or -1 (no success)
 int WiFi_RouterNetworkConnect(String txtSSID, String txtPassword)
 {
@@ -193,14 +209,9 @@ void setLedList(int LedList[], int length, int redval, int greenval, int blueval
   }
 }
 
-void sethour(int h) // hours setzen
+void sethour(int h, int lang) // hours setzen
 {
-  int time = 0;
-  if (Language == "1")
-  {
-    time = 1;
-  }
-
+  
   if (h == 13)
   {
     h = 1;
@@ -213,65 +224,61 @@ void sethour(int h) // hours setzen
   switch (h)
   {
   case 1:
-    setLedList(hour1[time], len_hour1[time], redval, blueval, greenval);
+    setLedList(hour1[lang], len_hour1[lang], redval, blueval, greenval);
     break;
   case 2:
-    setLedList(hour2[time], len_hour2[time], redval, blueval, greenval);
+    setLedList(hour2[lang], len_hour2[lang], redval, blueval, greenval);
     break;
   case 3:
-    setLedList(hour3[time], len_hour3[time], redval, blueval, greenval);
+    setLedList(hour3[lang], len_hour3[lang], redval, blueval, greenval);
     break;
   case 4:
-    setLedList(hour4[time], len_hour4[time], redval, blueval, greenval);
+    setLedList(hour4[lang], len_hour4[lang], redval, blueval, greenval);
     break;
   case 5:
-    setLedList(hour5[time], len_hour5[time], redval, blueval, greenval);
+    setLedList(hour5[lang], len_hour5[lang], redval, blueval, greenval);
     break;
   case 6:
-    setLedList(hour6[time], len_hour6[time], redval, blueval, greenval);
+    setLedList(hour6[lang], len_hour6[lang], redval, blueval, greenval);
     break;
   case 7:
-    setLedList(hour7[time], len_hour7[time], redval, blueval, greenval);
+    setLedList(hour7[lang], len_hour7[lang], redval, blueval, greenval);
     break;
   case 8:
-    setLedList(hour8[time], len_hour8[time], redval, blueval, greenval);
+    setLedList(hour8[lang], len_hour8[lang], redval, blueval, greenval);
     break;
   case 9:
-    setLedList(hour9[time], len_hour9[time], redval, blueval, greenval);
+    setLedList(hour9[lang], len_hour9[lang], redval, blueval, greenval);
     break;
   case 10:
-    setLedList(hour10[time], len_hour10[time], redval, blueval, greenval);
+    setLedList(hour10[lang], len_hour10[lang], redval, blueval, greenval);
     break;
   case 11:
-    setLedList(hour11[time], len_hour11[time], redval, blueval, greenval);
+    setLedList(hour11[lang], len_hour11[lang], redval, blueval, greenval);
     break;
   case 12:
-    setLedList(hour12[time], len_hour12[time], redval, blueval, greenval);
+    setLedList(hour12[lang], len_hour12[lang], redval, blueval, greenval);
     break;
   }
 }
 
-void displayTimeDE(int m, int h) // minutes setzen
+void displayTime(int m, int h, int lang) // minutes setzen
 {
 
-  int time = 0;
-  if (Language == "1")
-  {
-    time = 1;
-  }
+
   FastLED.clear();
 
   // ES IST
-  setLedList(ItIs[time], len_ItIs[time], redval, blueval, greenval);
+  setLedList(ItIs[lang], len_ItIs[lang], redval, blueval, greenval);
 
   int e = 0;
   e = m % 10;
 
   if ((m >= 0 && m < 5) || m == 60)
   {
-    sethour(h);
+    sethour(h,lang);
 
-    setLedList(OClock[time], len_OClock[time], redval, blueval, greenval);
+    setLedList(OClock[lang], len_OClock[lang], redval, blueval, greenval);
     if (h == 1 and time == 0)
     {
       leds[56] = CRGB::Black;
@@ -280,84 +287,84 @@ void displayTimeDE(int m, int h) // minutes setzen
 
   if (m >= 5 && m < 10)
   {
-    sethour(h);
-    setLedList(five[time], len_five[time], redval, blueval, greenval);
-    setLedList(past[time], len_past[time], redval, blueval, greenval);
+    sethour(h,lang);
+    setLedList(five[lang], len_five[lang], redval, blueval, greenval);
+    setLedList(past[lang], len_past[lang], redval, blueval, greenval);
   }
 
   if (m >= 10 && m < 15)
   {
-    sethour(h);
-    setLedList(ten[time], len_ten[time], redval, blueval, greenval);
-    setLedList(past[time], len_past[time], redval, blueval, greenval);
+    sethour(h,lang);
+    setLedList(ten[lang], len_ten[lang], redval, blueval, greenval);
+    setLedList(past[lang], len_past[lang], redval, blueval, greenval);
   }
 
   if (m >= 15 && m < 20)
   {
-    sethour(h);
-    setLedList(quarter[time], len_quarter[time], redval, blueval, greenval);
-    setLedList(past[time], len_past[time], redval, blueval, greenval);
+    sethour(h,lang);
+    setLedList(quarter[lang], len_quarter[lang], redval, blueval, greenval);
+    setLedList(past[lang], len_past[lang], redval, blueval, greenval);
   }
 
   if (m >= 20 && m < 25)
   {
-    sethour(h);
-    setLedList(twenty[time], len_twenty[time], redval, blueval, greenval);
-    setLedList(past[time], len_past[time], redval, blueval, greenval);
+    sethour(h,lang);
+    setLedList(twenty[lang], len_twenty[lang], redval, blueval, greenval);
+    setLedList(past[lang], len_past[lang], redval, blueval, greenval);
   }
 
   if (m >= 25 && m < 30)
   {
-    sethour(h);
-    setLedList(five[time], len_five[time], redval, blueval, greenval);
-    setLedList(twenty[time], len_twenty[time], redval, blueval, greenval);
-    setLedList(past[time], len_past[time], redval, blueval, greenval);
+    sethour(h,lang);
+    setLedList(five[lang], len_five[lang], redval, blueval, greenval);
+    setLedList(twenty[lang], len_twenty[lang], redval, blueval, greenval);
+    setLedList(past[lang], len_past[lang], redval, blueval, greenval);
   }
 
   if (m >= 30 && m < 35)
   {
 
-    sethour(h + 1);
+    sethour(h + 1,lang);
 
     // DE_half
-    setLedList(half[time], len_half[time], redval, blueval, greenval);
+    setLedList(half[lang], len_half[lang], redval, blueval, greenval);
   }
 
   if (m >= 35 && m < 40)
   {
-    sethour(h + 1);
+    sethour(h + 1,lang);
 
-    setLedList(five[time], len_five[time], redval, blueval, greenval);
-    setLedList(twenty[time], len_twenty[time], redval, blueval, greenval);
-    setLedList(to[time], len_to[time], redval, blueval, greenval);
+    setLedList(five[lang], len_five[lang], redval, blueval, greenval);
+    setLedList(twenty[lang], len_twenty[lang], redval, blueval, greenval);
+    setLedList(to[lang], len_to[lang], redval, blueval, greenval);
   }
 
   if (m >= 40 && m < 45)
   {
-    sethour(h + 1);
-    setLedList(twenty[time], len_twenty[time], redval, blueval, greenval);
-    setLedList(to[time], len_to[time], redval, blueval, greenval);
+    sethour(h + 1,lang);
+    setLedList(twenty[lang], len_twenty[lang], redval, blueval, greenval);
+    setLedList(to[lang], len_to[lang], redval, blueval, greenval);
   }
 
   if (m >= 45 && m < 50)
   {
-    sethour(h + 1);
-    setLedList(quarter[time], len_quarter[time], redval, blueval, greenval);
-    setLedList(to[time], len_to[time], redval, blueval, greenval);
+    sethour(h + 1,lang);
+    setLedList(quarter[lang], len_quarter[lang], redval, blueval, greenval);
+    setLedList(to[lang], len_to[lang], redval, blueval, greenval);
   }
 
   if (m >= 50 && m < 55)
   {
-    sethour(h + 1);
-    setLedList(ten[time], len_ten[time], redval, blueval, greenval);
-    setLedList(to[time], len_to[time], redval, blueval, greenval);
+    sethour(h + 1,lang);
+    setLedList(ten[lang], len_ten[lang], redval, blueval, greenval);
+    setLedList(to[lang], len_to[lang], redval, blueval, greenval);
   }
 
   if (m >= 55 && m < 60)
   {
-    sethour(h + 1);
-    setLedList(five[time], len_five[time], redval, blueval, greenval);
-    setLedList(to[time], len_to[time], redval, blueval, greenval);
+    sethour(h + 1,lang);
+    setLedList(five[lang], len_five[lang], redval, blueval, greenval);
+    setLedList(to[lang], len_to[lang], redval, blueval, greenval);
   }
 
   if (e >= 5)
@@ -401,6 +408,7 @@ void initvalues()
   String strBrightnessPercent = preferences.getString("Perc", "");
   String strNightmodeBrightness = preferences.getString("NightPerc", "");
   String strLanguage = preferences.getString("Language", "");
+  String strDeviceName = preferences.getString("DeviceName", "");
 
   // put the NVS stored values in RAM for the program if they contain information
   if (strColorHex != "")
@@ -492,14 +500,25 @@ void initvalues()
   {
     preferences.putString("Password", WIFIPassword);
   }
-  // if (strLanguage != "")
-  // {
-  //   Language = strLanguage;
-  // }
-  // else
-  // {
-  //   preferences.putString("Language", Language);
-  // }
+  if (strLanguage != "")
+  {
+    Language = strLanguage;
+  }
+  else
+  {
+    preferences.putString("Language", Language);
+  }
+
+
+  if (strDeviceName != "")
+  {
+    DeviceName = strDeviceName;
+  }
+  else
+  {
+    DeviceName="Wordclock"+randomString(5);
+    preferences.putString("DeviceName_", DeviceName);
+  }
 }
 
 byte calcDayOfWeek(byte y, byte m, byte d)
@@ -817,9 +836,9 @@ void setup()
 
   // Retrieve Configuration from FLASH
   initvalues();
-
+  Serial.println(DeviceName);
   // Create the BLE Device
-  BLEDevice::init("WordclockBLE");
+  BLEDevice::init(const_cast<char *>(DeviceName.c_str()));
   // Create the BLE Server
   pServer = BLEDevice::createServer();
   pServer->setCallbacks(new MyServerCallbacks());
@@ -1011,7 +1030,8 @@ void refreshInterface()
   setColor();
 
   // This sets the leds to display the time
-  displayTimeDE(minutes, hours);
+  int language=Language.toInt();
+  displayTime(minutes, hours,language);
 
   maintimer = millis();
 
