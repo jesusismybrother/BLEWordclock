@@ -93,8 +93,14 @@ export function Settings() {
     {label: 'UTC+14', value: '14'},
   ]);
 
+  const [LanguageList, setLanguageList] = useState([
+    {label: 'German', value: '0'},
+    {label: 'English', value: '1'},
+  ]);
+
   useEffect(() => {
     setSliderState(WordclockDataContext.nightmodebrightness);
+    
 
     const tempDateFrom = dateFrom;
 
@@ -212,6 +218,18 @@ export function Settings() {
           WordclockDataContext.setNightmodebright(value[0])
         }
       />
+      <Divider width={2} />
+      <View style={styles.rowView}>
+        <Text style={styles.titleText}>Language</Text>
+      </View>
+
+      <RNPickerSelect
+        onValueChange={value => WordclockDataContext.setLanguage(value)}
+        value={WordclockDataContext.language}
+        items={LanguageList}
+      />
+
+
     </View>
   );
 }

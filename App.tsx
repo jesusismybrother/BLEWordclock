@@ -122,7 +122,7 @@ export default function App() {
   const [ssid, setSsid] = useState('');
   const [message, setMessage] = useState('');
 
-  const [language, setLanguage] = useState(0);
+  const [language, setLanguage] = useState('0');
 
   const [nightmodeFrom, setNightmodeFrom] = useState('22:00');
   const [nightmodeTo, setNightmodeTo] = useState('05:00');
@@ -547,9 +547,9 @@ export default function App() {
           LANGUAGE_CHARACTERISTIC_UUID,
           (error, characteristic) => {
             if (characteristic?.value != null) {
-              setLanguage(parseInt(base64.decode(characteristic?.value)));
+              setLanguage(base64.decode(characteristic?.value));
               console.log(
-                'Lenguage update received: ',
+                'Language update received: ',
                 base64.decode(characteristic?.value),
               );
             }
@@ -828,14 +828,15 @@ export default function App() {
         .catch();
     },
 
-    setLanguage: (value: number) => {
+    setLanguage: (value: string) => {
       BLTManager.writeCharacteristicWithResponseForDevice(
         connectedDevice?.id,
         SERVICE_UUID,
         LANGUAGE_CHARACTERISTIC_UUID,
-        base64.encode(value.toString()),
+        base64.encode(value),
       )
         .then(characteristic => {
+
           console.log(
             'Language changed to :',
             base64.decode(characteristic.value),
