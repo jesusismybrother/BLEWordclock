@@ -6,6 +6,7 @@ import {styles} from '../Styles/styles';
 
 import {BLTparameters} from '../AppContext/Appcontext';
 
+
 export default function WelcomePage() {
   const BLToptions = useContext(BLTparameters);
 

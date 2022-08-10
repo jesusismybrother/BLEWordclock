@@ -516,7 +516,7 @@ void initvalues()
   }
   else
   {
-    DeviceName="Wordclock"+randomString(5);
+    DeviceName="Wordclock_"+randomString(5);
     preferences.putString("DeviceName_", DeviceName);
   }
 }

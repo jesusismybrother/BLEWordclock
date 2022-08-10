@@ -1,11 +1,27 @@
-import React, {useReducer, useState, useEffect, useCallback} from 'react';
-import {TouchableOpacity, Button, PermissionsAndroid, View} from 'react-native';
+import React, {
+  useReducer,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+} from 'react';
+import {
+  TouchableOpacity,
+  Button,
+  PermissionsAndroid,
+  View,
+  Text,
+  Modal,
+  Pressable,
+  FlatList,
+} from 'react-native';
 
 import {NavigationContainer} from '@react-navigation/native';
 import base64 from 'react-native-base64';
 import {WordclockData, BLTparameters} from './AppContext/Appcontext';
 
 import {BleManager, Device} from 'react-native-ble-plx';
+import {styles} from './Styles/styles';
 
 import MyTabs from './Components/Tabs';
 import WelcomePage from './Pages/WelcomePage';
@@ -14,6 +30,8 @@ import Spinner from 'react-native-loading-spinner-overlay';
 import Toast from 'react-native-simple-toast';
 
 import {LogBox} from 'react-native';
+import { Divider } from 'react-native-elements';
+
 LogBox.ignoreLogs(['new NativeEventEmitter']); // Ignore log notification by message
 LogBox.ignoreAllLogs(); //Ignore all log notifications
 
@@ -35,8 +53,9 @@ const reducer = (
       // check if the detected device is not already added to the list
       if (
         founddevice.device &&
-        !state.find(dev => dev.value === action.payload.value)
+        !state.find(dev => dev.label === action.payload.label)
       ) {
+        // console.log('Adding ' + founddevice.name);
         return [
           ...state,
           {
@@ -98,12 +117,18 @@ function BoolToString(input: boolean) {
 }
 
 export default function App() {
+  const [modalVisible, setModalVisible] = useState(false);
+
   //Used to check if BLT Device has Disconnected periodically
 
   const [scannedDevices, dispatch] = useReducer(reducer, []);
+  const refScannedDevices = useRef(scannedDevices);
+  refScannedDevices.current = scannedDevices;
 
   // state to give the user a feedback about the manager scanning devices
   const [isLoading, setIsLoading] = useState(false);
+  const refIsLoading = useRef(isLoading);
+  refIsLoading.current = isLoading;
 
   //Is a device connected?
   const [isConnected, setIsConnected] = useState(false);
@@ -146,7 +171,7 @@ export default function App() {
   };
 
   // Scans availbale BLT Devices and adds them to the list "scannedDevices"
-  async function scanDevices() {
+  function scanDevices() {
     PermissionsAndroid.request(
       PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
       {
@@ -156,49 +181,65 @@ export default function App() {
         buttonNegative: 'Cancel',
         buttonPositive: 'OK',
       },
-    )
-      .then(answere => {
-        console.log('scanning');
-        Toast.show('Scanning');
-        // display the Activityindicator
-        setIsLoading(true);
-        let found = false;
+    ).then(answere => {
+      var done = false;
+      console.log('scanning');
+      Toast.show('Scanning');
+      // display the Activityindicator
+      setIsLoading(true);
+      let found = false;
 
-        BLTManager.startDeviceScan(null, null, (error, scannedDevice) => {
-          if (error) {
-            console.warn(error);
-          }
+      // Clear the list of found devices
+      dispatch({
+        type: 'CLEAR',
+      });
 
-          // if a device is detected add the device to the list by dispatching the action into the reducer
-          // if (scannedDevice && scannedDevice.name != null) {
-          //   console.log(scannedDevice.name);
-          //   dispatch({
-          //     type: 'ADD_DEVICE',
-          //     payload: {
-          //       device: scannedDevice,
-          //       label: scannedDevice.name,
-          //       value: scannedDevice.id,
-          //     },
-          //   });
-          // }
+      BLTManager.startDeviceScan(null, null, (error, scannedDevice) => {
+        if (error) {
+          console.warn(error);
+        }
 
-          if (scannedDevice && scannedDevice.name == 'WordclockBLE') {
-            BLTManager.stopDeviceScan();
-            found = true;
-            connectDevice(scannedDevice);
-          }
-        });
+        // if a device is detected add the device to the list by dispatching the action into the reducer
+        if (scannedDevice && scannedDevice.name?.startsWith('Wordclock')) {
+          // BLTManager.stopDeviceScan();
+          // console.log('found device');
+          found = true;
+          dispatch({
+            type: 'ADD_DEVICE',
+            payload: {
+              device: scannedDevice,
+              label: scannedDevice.name,
+              value: scannedDevice.id,
+            },
+          });
+          // console.log(scannedDevices);
+          // connectDevice(scannedDevice);
+        }
 
-        // stop scanning devices after 5 seconds
+        // stop scanning devices after 2 seconds
         setTimeout(() => {
           BLTManager.stopDeviceScan();
-          setIsLoading(false);
-          if (found == false) {
-            Toast.show('Word clock not found');
+
+          if (!done) {
+            console.log('Found Devices: ', refScannedDevices.current.length);
+            // console.log(refScannedDevices.current);
+            done = true;
+            refScannedDevices.current.map(currentDevice => {
+              console.log(currentDevice.label, currentDevice.value);
+            });
+
+            if (refScannedDevices.current.length == 1) {
+              setIsLoading(false);
+              connectDevice(refScannedDevices.current[0].device);
+            } else {
+              setModalVisible(true);
+            }
           }
-        }, 5000);
-      })
-      .catch();
+
+          // checkScannedDevices();
+        }, 2000);
+      });
+    });
   }
 
   //Connect the device and start monitoring characteristics
@@ -673,6 +714,18 @@ export default function App() {
     }
   }
 
+  const findDevice = (name: string) => {
+    refScannedDevices.current.map(currentDevice => {
+      // console.log(currentDevice);
+      // console.log(name);
+      if (currentDevice.label == name) {
+        console.log('Matched');
+        return 'test';
+        // return(currentDevice.device)
+      }
+      // console.log(currentDevice.label, currentDevice.value);
+    });
+  };
   // Wordclock data
   const WordclockDataOut = {
     summertime: summertime,
@@ -836,7 +889,6 @@ export default function App() {
         base64.encode(value),
       )
         .then(characteristic => {
-
           console.log(
             'Language changed to :',
             base64.decode(characteristic.value),
@@ -885,6 +937,56 @@ export default function App() {
           <View>
             <Spinner visible={isLoading} />
             <WelcomePage />
+            <View style={styles.centeredView}>
+              <Modal
+                animationType="slide"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => {
+                  setModalVisible(!modalVisible);
+                }}>
+                <View style={styles.centeredView}>
+                  <View style={styles.modalView}>
+                    <Text style={styles.titleText}>Choose desired Clock</Text>
+                    <FlatList
+                      data={scannedDevices}
+                      extraData={scannedDevices}
+                      keyExtractor={item => item.value}
+                      renderItem={({item}) => (
+                        <View style={{margin:5}}>
+                          <Button
+                          
+                            title={item.label}
+                            onPress={() => {
+                              setModalVisible(!modalVisible);
+                              refScannedDevices.current.map(currentDevice => {
+                                if (currentDevice.label == item.label) {
+                                  console.log('Matched');
+                                  connectDevice(currentDevice.device);
+                                }
+                              });
+
+                              setIsLoading(false);
+                            }}
+                            disabled={false}
+                          />
+                        </View>
+                        // <Text>{item.label}</Text>
+                      )}
+                    />
+
+                    {/* <Button
+                    title="Select"
+                    onPress={() => {
+                      setModalVisible(!modalVisible);
+                      setIsLoading(false);
+                    }}
+                    disabled={false}
+                  /> */}
+                  </View>
+                </View>
+              </Modal>
+            </View>
           </View>
         ) : (
           <NavigationContainer>
