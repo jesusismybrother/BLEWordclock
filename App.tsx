@@ -30,7 +30,7 @@ import Spinner from 'react-native-loading-spinner-overlay';
 import Toast from 'react-native-simple-toast';
 
 import {LogBox} from 'react-native';
-import { Divider } from 'react-native-elements';
+import {Divider} from 'react-native-elements';
 
 LogBox.ignoreLogs(['new NativeEventEmitter']); // Ignore log notification by message
 LogBox.ignoreAllLogs(); //Ignore all log notifications
@@ -220,7 +220,7 @@ export default function App() {
         setTimeout(() => {
           BLTManager.stopDeviceScan();
 
-          if (!done) {
+          if (!done && found) {
             console.log('Found Devices: ', refScannedDevices.current.length);
             // console.log(refScannedDevices.current);
             done = true;
@@ -234,6 +234,9 @@ export default function App() {
             } else {
               setModalVisible(true);
             }
+          } else {
+            setIsLoading(false);
+            Toast.show('No Clock found');
           }
 
           // checkScannedDevices();
@@ -714,18 +717,6 @@ export default function App() {
     }
   }
 
-  const findDevice = (name: string) => {
-    refScannedDevices.current.map(currentDevice => {
-      // console.log(currentDevice);
-      // console.log(name);
-      if (currentDevice.label == name) {
-        console.log('Matched');
-        return 'test';
-        // return(currentDevice.device)
-      }
-      // console.log(currentDevice.label, currentDevice.value);
-    });
-  };
   // Wordclock data
   const WordclockDataOut = {
     summertime: summertime,
@@ -953,9 +944,8 @@ export default function App() {
                       extraData={scannedDevices}
                       keyExtractor={item => item.value}
                       renderItem={({item}) => (
-                        <View style={{margin:5}}>
+                        <View style={{margin: 5}}>
                           <Button
-                          
                             title={item.label}
                             onPress={() => {
                               setModalVisible(!modalVisible);
