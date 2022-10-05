@@ -4,21 +4,19 @@
 void refreshInterface();
 void setColor();
 
-
 String randomString(int length)
 {
-  String randString="";
-  for(int i = 0; i<length; i++)
-      {
-         byte randomValue = random(0, 36);
-         char letter = randomValue + 'a';
-         if(randomValue > 26)
-           letter = (randomValue - 26) + '0';
-         randString += letter;
-      }
+  String randString = "";
+  for (int i = 0; i < length; i++)
+  {
+    byte randomValue = random(0, 36);
+    char letter = randomValue + 'a';
+    if (randomValue > 26)
+      letter = (randomValue - 26) + '0';
+    randString += letter;
+  }
   return randString;
 }
-
 
 // Connect to router network and return 1 (success) or -1 (no success)
 int WiFi_RouterNetworkConnect(String txtSSID, String txtPassword)
@@ -69,8 +67,7 @@ int WiFi_RouterNetworkConnect(String txtSSID, String txtPassword)
   return success;
 }
 
-void(* resetFunc) (void) = 0;
-
+void (*resetFunc)(void) = 0;
 
 class MyServerCallbacks : public BLEServerCallbacks
 {
@@ -85,7 +82,7 @@ class MyServerCallbacks : public BLEServerCallbacks
   void onDisconnect(BLEServer *pServer)
   {
     Serial.println("Disconnected");
-    resetFunc(); //call reset
+    resetFunc(); // call reset
     isConnected = false;
   }
 };
@@ -211,7 +208,7 @@ void setLedList(int LedList[], int length, int redval, int greenval, int blueval
 
 void sethour(int h, int lang) // hours setzen
 {
-  
+
   if (h == 13)
   {
     h = 1;
@@ -265,7 +262,6 @@ void sethour(int h, int lang) // hours setzen
 void displayTime(int m, int h, int lang) // minutes setzen
 {
 
-
   FastLED.clear();
 
   // ES IST
@@ -276,7 +272,7 @@ void displayTime(int m, int h, int lang) // minutes setzen
 
   if ((m >= 0 && m < 5) || m == 60)
   {
-    sethour(h,lang);
+    sethour(h, lang);
 
     setLedList(OClock[lang], len_OClock[lang], redval, blueval, greenval);
     if (h == 1 and time == 0)
@@ -287,35 +283,35 @@ void displayTime(int m, int h, int lang) // minutes setzen
 
   if (m >= 5 && m < 10)
   {
-    sethour(h,lang);
+    sethour(h, lang);
     setLedList(five[lang], len_five[lang], redval, blueval, greenval);
     setLedList(past[lang], len_past[lang], redval, blueval, greenval);
   }
 
   if (m >= 10 && m < 15)
   {
-    sethour(h,lang);
+    sethour(h, lang);
     setLedList(ten[lang], len_ten[lang], redval, blueval, greenval);
     setLedList(past[lang], len_past[lang], redval, blueval, greenval);
   }
 
   if (m >= 15 && m < 20)
   {
-    sethour(h,lang);
+    sethour(h, lang);
     setLedList(quarter[lang], len_quarter[lang], redval, blueval, greenval);
     setLedList(past[lang], len_past[lang], redval, blueval, greenval);
   }
 
   if (m >= 20 && m < 25)
   {
-    sethour(h,lang);
+    sethour(h, lang);
     setLedList(twenty[lang], len_twenty[lang], redval, blueval, greenval);
     setLedList(past[lang], len_past[lang], redval, blueval, greenval);
   }
 
   if (m >= 25 && m < 30)
   {
-    sethour(h,lang);
+    sethour(h, lang);
     setLedList(five[lang], len_five[lang], redval, blueval, greenval);
     setLedList(twenty[lang], len_twenty[lang], redval, blueval, greenval);
     setLedList(past[lang], len_past[lang], redval, blueval, greenval);
@@ -324,7 +320,7 @@ void displayTime(int m, int h, int lang) // minutes setzen
   if (m >= 30 && m < 35)
   {
 
-    sethour(h + 1,lang);
+    sethour(h + 1, lang);
 
     // DE_half
     setLedList(half[lang], len_half[lang], redval, blueval, greenval);
@@ -332,7 +328,7 @@ void displayTime(int m, int h, int lang) // minutes setzen
 
   if (m >= 35 && m < 40)
   {
-    sethour(h + 1,lang);
+    sethour(h + 1, lang);
 
     setLedList(five[lang], len_five[lang], redval, blueval, greenval);
     setLedList(twenty[lang], len_twenty[lang], redval, blueval, greenval);
@@ -341,28 +337,28 @@ void displayTime(int m, int h, int lang) // minutes setzen
 
   if (m >= 40 && m < 45)
   {
-    sethour(h + 1,lang);
+    sethour(h + 1, lang);
     setLedList(twenty[lang], len_twenty[lang], redval, blueval, greenval);
     setLedList(to[lang], len_to[lang], redval, blueval, greenval);
   }
 
   if (m >= 45 && m < 50)
   {
-    sethour(h + 1,lang);
+    sethour(h + 1, lang);
     setLedList(quarter[lang], len_quarter[lang], redval, blueval, greenval);
     setLedList(to[lang], len_to[lang], redval, blueval, greenval);
   }
 
   if (m >= 50 && m < 55)
   {
-    sethour(h + 1,lang);
+    sethour(h + 1, lang);
     setLedList(ten[lang], len_ten[lang], redval, blueval, greenval);
     setLedList(to[lang], len_to[lang], redval, blueval, greenval);
   }
 
   if (m >= 55 && m < 60)
   {
-    sethour(h + 1,lang);
+    sethour(h + 1, lang);
     setLedList(five[lang], len_five[lang], redval, blueval, greenval);
     setLedList(to[lang], len_to[lang], redval, blueval, greenval);
   }
@@ -509,14 +505,13 @@ void initvalues()
     preferences.putString("Language", Language);
   }
 
-
   if (strDeviceName != "")
   {
     DeviceName = strDeviceName;
   }
   else
   {
-    DeviceName="Wordclock"+randomString(5);
+    DeviceName = "Wordclock" + randomString(5);
     preferences.putString("DeviceName_", DeviceName);
   }
 }
@@ -751,28 +746,8 @@ void dealwithnighttime()
   }
 }
 
-void updateTime()
+void correctTime()
 {
-  const char *ntpServer = "pool.ntp.org";
-
-  const long gmtOffset_sec = 0;
-  const int daylightOffset_sec = 0;
-
-  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
-  struct tm timeinfo;
-
-  if (!getLocalTime(&timeinfo))
-  {
-    Serial.println("Failed to obtain time");
-    return;
-  }
-  hours = timeinfo.tm_hour;
-  minutes = timeinfo.tm_min;
-  seconds = timeinfo.tm_sec;
-  years = timeinfo.tm_year + 1900;
-  months = timeinfo.tm_mon + 1;
-  days = timeinfo.tm_mday;
-
   if (SummertimeActive.toInt() == 1)
   {
     clockGen();
@@ -808,6 +783,30 @@ void updateTime()
   {
     hours = hours - 12;
   }
+
+}
+void updateNTPTime()
+{
+  const char *ntpServer = "pool.ntp.org";
+
+  const long gmtOffset_sec = 0;
+  const int daylightOffset_sec = 0;
+
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  struct tm timeinfo;
+
+  if (!getLocalTime(&timeinfo))
+  {
+    Serial.println("Failed to obtain time");
+    return;
+  }
+  hours = timeinfo.tm_hour;
+  minutes = timeinfo.tm_min;
+  seconds = timeinfo.tm_sec;
+  years = timeinfo.tm_year + 1900;
+  months = timeinfo.tm_mon + 1;
+  days = timeinfo.tm_mday;
+
 }
 
 void Wifireconnect()
@@ -833,6 +832,27 @@ void setup()
 
   // INITIALIZE LEDs
   FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+
+  // Initialize RTC
+  if (!rtc.begin())
+  {
+    Serial.println("Couldn't find RTC");
+    
+  }
+  else{
+    rtc_found=true;
+  }
+
+  if (rtc.lostPower())
+  {
+    Serial.println("RTC lost power, let's set the time!");
+    // When time needs to be set on a new device, or after a power loss, the
+    // following line sets the RTC to the date & time this sketch was compiled
+    rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    // This line sets the RTC with an explicit date & time, for example to set
+    // January 21, 2014 at 3am you would call:
+    // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
+  }
 
   // Retrieve Configuration from FLASH
   initvalues();
@@ -1000,11 +1020,11 @@ void setup()
   // connect to WIFI
 
   WiFi_RouterNetworkConnect(WIFISSID, WIFIPassword);
-
+  hours = 12;
+  minutes = 34;
   refreshInterface();
 }
-
-void refreshInterface()
+void checkWifiConnection()
 {
   if (WiFi.status() != WL_CONNECTED)
   {
@@ -1024,16 +1044,19 @@ void refreshInterface()
       wificonnected_characteristic->notify();
       wificonnected = true;
     }
-    updateTime();
+    updateNTPTime();
+    correctTime();
   }
+}
 
+void refreshInterface()
+{
+  
   setColor();
 
   // This sets the leds to display the time
-  int language=Language.toInt();
-  displayTime(minutes, hours,language);
-
-  maintimer = millis();
+  int language = Language.toInt();
+  displayTime(minutes, hours, language);
 
   Serial.print(hours);
   Serial.print(':');
@@ -1041,22 +1064,46 @@ void refreshInterface()
   Serial.println();
 }
 
+void getRTCTime()
+{
 
-
+}
 
 void loop()
 {
 
-  if (millis() - maintimer > 5000)
+  if(rtc_found && millis() - maintimer > 1000)
   {
+    // Updates time from RTC
+    Serial.println("Getting time from RTC");
+    getRTCTime();
+    correctTime();
     refreshInterface();
+    maintimer = millis();
   }
-  delay(50);
 
+  else if (!rtc_found && millis() - maintimer > 5000)
+  {
+    Serial.println("Getting time from Wifi");
+    // Checks to see if wifi is connected and if yes, updates the time
+    checkWifiConnection();
+    refreshInterface();
+    maintimer = millis();
+  }
+
+  if(rtc_found && millis() - RTCUpdateTimer > 600000)
+  {
+    // Updates RTC from Internet Time
+    Serial.println("Updating RTC");  
+    RTCUpdateTimer = millis();
+  }
+
+// Check if Bluetooth has been disconnected
   if (isConnected && (millis() - heartbeatTimer > 10000))
   {
     pServer->disconnect(0);
   }
+
+  delay(50);
+
 }
-
-

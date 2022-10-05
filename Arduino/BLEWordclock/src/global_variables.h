@@ -7,6 +7,7 @@
 CRGB leds[NUM_LEDS];
 
 long maintimer = millis();
+long RTCUpdateTimer = millis();
 long reconnecttimer = millis();
 int redval = 255;
 int greenval = 255;
@@ -144,7 +145,11 @@ String DeviceName = "Wordclock";
 
 
 // Timekeeping
-int rtcpresent = 0;
+
+// RTC
+RTC_DS3231 rtc;
+bool rtc_found=false;
+
 int hours;
 int minutes;
 int seconds;
